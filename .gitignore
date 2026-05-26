@@ -1,0 +1,19 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Claude Code (local-only settings; shared settings.json should be tracked)
+.claude/settings.local.json
+
+# Go
+*.exe
+*.test
+*.out
+*.prof
+coverage.*
+vendor/
+
+# OS
+.DS_Store
+Thumbs.db

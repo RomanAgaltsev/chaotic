@@ -1,0 +1,44 @@
+// Package engine holds the rules and decision logic that adapters consult on
+// every wrapped operation. It depends only on the standard library and the
+// chaotic fault package.
+package engine
+
+import "context"
+
+// Kind identifies which adapter produced an Op.
+// Do not renumber existing values.
+type Kind int
+
+const (
+	OpHTTPClient Kind = iota + 1
+	OpHTTPServer
+	OpSQL
+	OpGRPCClient
+	OpGRPCServer
+)
+
+// Op describes a single intercepted call. Adapters construct an Op only after
+// Engine.Enabled() returns true, so the no-op path allocates nothing.
+type Op struct {
+	Kind   Kind
+	Name   string
+	Method string
+	Attrs  map[string]string
+}
+
+// Action is what Eval returns; adapters execute it around the wrapped call.
+// Before runs prior to the call. After runs after call.
+type Action interface {
+	Before(ctx context.Context) error
+	After(ctx context.Context) error
+}
+
+// passAction is the zero-sized, allocation-free Action returned when no rule
+// matches. Pass is exported so tests can assert against it.
+type passAction struct{}
+
+func (a *passAction) Before(ctx context.Context) error { return nil }
+func (a *passAction) After(ctx context.Context) error  { return nil }
+
+// Pass is the canonical no-op action.
+var Pass Action = &passAction{}
