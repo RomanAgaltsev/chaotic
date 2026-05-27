@@ -1,0 +1,72 @@
+name: security
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly Monday 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        run: |
+          mods=$(find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; \
+            | sort | jq -R . | jq -cs .)
+          echo "modules=$mods" >> "$GITHUB_OUTPUT"
+
+  govulncheck:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - name: govulncheck
+        working-directory: ${{ matrix.module }}
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read           # required for CodeQL in private repos (get-a-workflow-run API)
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: go
+          config-file: ./.github/codeql/codeql-config.yml
+      - uses: github/codeql-action/autobuild@v4
+      - uses: github/codeql-action/analyze@v4
+
+  security-success:
+    if: always()
+    needs: [govulncheck, codeql]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.govulncheck.result }}" != "success" ] || \
+             [ "${{ needs.codeql.result }}" != "success" ]; then
+            echo "security checks failed"; exit 1
+          fi

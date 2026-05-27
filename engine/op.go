@@ -9,6 +9,7 @@ import "context"
 // Do not renumber existing values.
 type Kind int
 
+// Op kind constants identify which adapter produced an Op.
 const (
 	OpHTTPClient Kind = iota + 1
 	OpHTTPServer

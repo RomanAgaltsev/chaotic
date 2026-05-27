@@ -6,7 +6,6 @@ import (
 	dbdrv "database/sql/driver"
 	"errors"
 	"io"
-	"sync"
 	"testing"
 	"time"
 
@@ -116,8 +115,6 @@ func (t *fakeTx) Commit() error {
 func (t *fakeTx) Rollback() error {
 	return nil
 }
-
-var registerOnce sync.Once
 
 func init() {
 	sql.Register("chaosfake", &fakeDriver{})

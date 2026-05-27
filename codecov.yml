@@ -1,0 +1,13 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true   # pre-1.0: report, don't block
+    patch:
+      default:
+        informational: true
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: false

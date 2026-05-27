@@ -1,0 +1,3 @@
+name: chaotic CodeQL config
+queries:
+  - uses: security-extended

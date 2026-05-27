@@ -1,0 +1,88 @@
+name: test
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        run: |
+          mods=$(find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; \
+            | sort | jq -R . | jq -cs .)
+          echo "modules=$mods" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26.x", "stable"]
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: tidy check
+        working-directory: ${{ matrix.module }}
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+      - name: race tests + coverage
+        working-directory: ${{ matrix.module }}
+        run: go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
+      - name: upload coverage
+        if: matrix.go == 'stable'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ${{ matrix.module }}/coverage.out
+          flags: ${{ matrix.module }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  bench-and-alloc-gate:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - name: benchmarks (compile + run)
+        working-directory: ${{ matrix.module }}
+        run: go test -run=^$ -bench=. -benchmem ./...
+      - name: chaos_off zero-alloc gate
+        working-directory: ${{ matrix.module }}
+        run: |
+          go build -tags chaos_off ./...
+          go test -tags chaos_off -run ZeroAllocUnderChaosOff ./...
+
+  test-success:
+    if: always()
+    needs: [test, bench-and-alloc-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: gate
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.bench-and-alloc-gate.result }}" != "success" ]; then
+            echo "one or more test jobs failed"; exit 1
+          fi

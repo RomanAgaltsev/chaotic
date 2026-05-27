@@ -1,0 +1,144 @@
+version: '3'
+
+# GOWORK=off makes every task resolve each module's own go.mod (CI parity).
+# Use the go.work workspace directly (not these tasks) for cross-module editing.
+env:
+  GOWORK: off
+
+vars:
+  # The set of Go modules in this repo. Add new submodules here as they land
+  # (also register them in go.work and release-please-config.json).
+  MODULES: ". adapter/grpc"
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  build:
+    desc: "Build a module (MODULE=. by default)"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go build ./...
+
+  vet:
+    desc: "go vet a module"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go vet ./...
+
+  test:
+    desc: "Test a module"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go test ./...
+
+  test:race:
+    desc: "Race + shuffled tests for a module"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go test -race -shuffle=on ./...
+
+  cover:
+    desc: "Coverage profile for a module (writes coverage.out in the module dir)"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
+  bench:
+    desc: "Run benchmarks for a module (no allocation regressions hidden)"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go test -run=^$ -bench=. -benchmem ./...
+
+  chaos-off:
+    desc: "Build + zero-alloc gate under the chaos_off build tag"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go build -tags chaos_off ./...
+      - go test -tags chaos_off -run ZeroAllocUnderChaosOff ./...
+
+  lint:
+    desc: "golangci-lint a module"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - golangci-lint run ./...
+
+  lint:fix:
+    desc: "golangci-lint --fix a module"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - golangci-lint run --fix ./...
+
+  fmt:
+    desc: "Format a module with gofumpt (golangci-lint fmt)"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - golangci-lint fmt ./...
+
+  tidy:
+    desc: "go mod tidy a module"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go mod tidy
+
+  tidy:check:
+    desc: "Fail if go.mod/go.sum are not tidy"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - go mod tidy
+      - git diff --exit-code -- go.mod go.sum
+
+  vuln:
+    desc: "govulncheck a module"
+    dir: '{{.MODULE | default "."}}'
+    cmds:
+      - govulncheck ./...
+
+  # --- Aggregates: loop over every module ---
+
+  test:all:
+    desc: "Race tests across all modules"
+    cmds:
+      - for: { var: MODULES }
+        task: test:race
+        vars: { MODULE: '{{.ITEM}}' }
+
+  lint:all:
+    desc: "Lint across all modules"
+    cmds:
+      - for: { var: MODULES }
+        task: lint
+        vars: { MODULE: '{{.ITEM}}' }
+
+  vuln:all:
+    desc: "govulncheck across all modules"
+    cmds:
+      - for: { var: MODULES }
+        task: vuln
+        vars: { MODULE: '{{.ITEM}}' }
+
+  chaos-off:all:
+    desc: "chaos_off alloc gate across all modules"
+    cmds:
+      - for: { var: MODULES }
+        task: chaos-off
+        vars: { MODULE: '{{.ITEM}}' }
+
+  tidy:check:all:
+    desc: "tidy check across all modules"
+    cmds:
+      - for: { var: MODULES }
+        task: tidy:check
+        vars: { MODULE: '{{.ITEM}}' }
+
+  ci:
+    desc: "Full local gate (what CI runs)"
+    cmds:
+      - task: tidy:check:all
+      - task: lint:all
+      - task: test:all
+      - task: chaos-off:all
+      - task: vuln:all

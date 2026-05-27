@@ -108,7 +108,10 @@ func TestConnDropFaultClosesConnection(t *testing.T) {
 		Transport: tr,
 		Timeout:   2 * time.Second,
 	}
-	_, err := client.Get(srv.URL + "/")
+	resp, err := client.Get(srv.URL + "/")
+	if resp != nil {
+		resp.Body.Close()
+	}
 	if err == nil {
 		t.Fatal("expected error from dropped connection, got nil")
 	}

@@ -78,6 +78,8 @@ func (e *Engine) Reset() {
 	e.hits = make(map[string]*atomic.Int64)
 }
 
+// Eval evaluates the op against all configured rules and returns the matching
+// Action, or Pass if no rule matches or the engine is disabled.
 func (e *Engine) Eval(ctx context.Context, op Op) Action {
 	if !e.Enabled() {
 		return Pass

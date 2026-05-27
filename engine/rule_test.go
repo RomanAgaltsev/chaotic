@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/ag4r/chaotic/fault"
@@ -52,7 +53,7 @@ func TestMatchAttrRequiresExactValue(t *testing.T) {
 
 func TestMatchPredicateUserDefined(t *testing.T) {
 	r := NewRule(MatchPredicate(func(_ context.Context, op Op) bool {
-		return op.Method == "POST"
+		return op.Method == http.MethodPost
 	}))
 	if !r.matches(context.Background(), Op{Method: "POST"}) {
 		t.Fatal("expected POST to match")

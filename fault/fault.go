@@ -55,7 +55,7 @@ func (j jitteredFault) Apply(ctx context.Context) error {
 	d := j.min
 	if j.max > j.min {
 		span := int64(j.max - j.min)
-		d = j.min + time.Duration(rand.Int64N(span+1))
+		d = j.min + time.Duration(rand.Int64N(span+1)) //nolint:gosec // non-cryptographic randomness is intentional for jitter duration
 	}
 	return sleep(ctx, d)
 }

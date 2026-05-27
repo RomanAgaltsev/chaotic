@@ -158,7 +158,7 @@ func Probability(p float64, seed int64) RuleOption {
 	return func(r *Rule) {
 		r.counter = &probCounter{
 			p:   p,
-			rng: rand.New(rand.NewPCG(uint64(seed), uint64(seed)^0x9E3779B97F4A7C15)),
+			rng: rand.New(rand.NewPCG(uint64(seed), uint64(seed)^0x9E3779B97F4A7C15)), //nolint:gosec // non-cryptographic randomness is intentional for chaos probability decisions
 		}
 	}
 }

@@ -90,7 +90,7 @@ func (c *chaosConn) Close() error {
 }
 
 func (c *chaosConn) Begin() (driver.Tx, error) {
-	return c.wrapped.Begin()
+	return c.wrapped.Begin() //nolint:staticcheck // required by driver.Conn interface; wrapped driver may not implement ConnBeginTx
 }
 
 func (c *chaosConn) Ping(ctx context.Context) error {
@@ -131,7 +131,7 @@ func (c *chaosConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.
 	if btc, ok := c.wrapped.(driver.ConnBeginTx); ok {
 		return btc.BeginTx(ctx, opts)
 	}
-	return c.wrapped.Begin()
+	return c.wrapped.Begin() //nolint:staticcheck // fallback for drivers that don't implement ConnBeginTx
 }
 
 func (c *chaosConn) runChaos(ctx context.Context, query string, method string) error {
@@ -169,14 +169,14 @@ func (s *chaosStmt) Exec(args []driver.Value) (driver.Result, error) {
 	if err := s.runChaos(context.Background()); err != nil {
 		return nil, translate(err)
 	}
-	return s.wrapped.Exec(args)
+	return s.wrapped.Exec(args) //nolint:staticcheck // required by driver.Stmt interface
 }
 
 func (s *chaosStmt) Query(args []driver.Value) (driver.Rows, error) {
 	if err := s.runChaos(context.Background()); err != nil {
 		return nil, translate(err)
 	}
-	return s.wrapped.Query(args)
+	return s.wrapped.Query(args) //nolint:staticcheck // required by driver.Stmt interface
 }
 
 func (s *chaosStmt) runChaos(ctx context.Context) error {

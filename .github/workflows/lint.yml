@@ -1,0 +1,55 @@
+name: lint
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        run: |
+          mods=$(find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; \
+            | sort | jq -R . | jq -cs .)
+          echo "modules=$mods" >> "$GITHUB_OUTPUT"
+
+  lint:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          working-directory: ${{ matrix.module }}
+      - name: format check
+        working-directory: ${{ matrix.module }}
+        run: |
+          golangci-lint fmt ./...
+          git diff --exit-code
+
+  lint-success:
+    if: always()
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "lint failed"; exit 1
+          fi

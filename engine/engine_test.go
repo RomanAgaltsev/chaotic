@@ -94,7 +94,6 @@ func TestEvalFirstMatchingRuleWins(t *testing.T) {
 	if err := a.Before(context.Background()); !errors.Is(err, first) {
 		t.Fatalf("Before returned %v, want %v (first rule wins)", err, first)
 	}
-
 }
 
 func TestEvalSkipsRulesWhoseCounterRefuses(t *testing.T) {

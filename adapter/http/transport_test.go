@@ -105,7 +105,10 @@ func TestConnDropFaultReturnsNetOpError(t *testing.T) {
 	client := &http.Client{
 		Transport: chaoshttp.WrapTransport(http.DefaultTransport, e),
 	}
-	_, err := client.Get(srv.URL + "/")
+	resp, err := client.Get(srv.URL + "/")
+	if resp != nil {
+		resp.Body.Close()
+	}
 	var opErr *net.OpError
 	if !errors.As(err, &opErr) {
 		t.Fatalf("err = %T %v, want *net.OpError", err, err)
@@ -133,10 +136,11 @@ func TestOpAttrsIncludeHost(t *testing.T) {
 	client := &http.Client{
 		Transport: chaoshttp.WrapTransport(http.DefaultTransport, e),
 	}
-	_, err := client.Get(srv.URL + "/x")
+	resp, err := client.Get(srv.URL + "/x")
 	if err != nil {
 		t.Fatal(err)
 	}
+	resp.Body.Close()
 	if gotAttrs["host"] == "" {
 		t.Fatalf("Attrs.host empty, want set; got %v", gotAttrs)
 	}
