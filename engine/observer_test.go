@@ -30,3 +30,24 @@ func TestKillSwitchTypeIsCallable(t *testing.T) {
 		t.Fatal("kill switch returned false")
 	}
 }
+
+func TestSkipReasonsAreDistinctAndNonEmpty(t *testing.T) {
+	reasons := []string{
+		ReasonCounter,
+		ReasonRateLimit,
+		ReasonMaxConcurrent,
+		ReasonFailureBudget,
+		ReasonDisabled,
+		ReasonKillSwitch,
+	}
+	seen := map[string]bool{}
+	for _, r := range reasons {
+		if r == "" {
+			t.Fatal("empty reason constant")
+		}
+		if seen[r] {
+			t.Fatalf("duplicate reason %q", r)
+		}
+		seen[r] = true
+	}
+}

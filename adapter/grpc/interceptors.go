@@ -32,7 +32,11 @@ func UnaryClientInterceptor(eng *engine.Engine) grpc.UnaryClientInterceptor {
 		if err := action.Before(ctx); err != nil {
 			return toStatus(err)
 		}
-		return invoker(ctx, method, req, reply, cc, opts...)
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		if o, ok := action.(engine.OutcomeReporter); ok {
+			o.Outcome(ctx, err)
+		}
+		return err
 	}
 }
 
@@ -52,7 +56,11 @@ func UnaryServerInterceptor(eng *engine.Engine) grpc.UnaryServerInterceptor {
 		if err := action.Before(ctx); err != nil {
 			return nil, toStatus(err)
 		}
-		return handler(ctx, req)
+		resp, herr := handler(ctx, req)
+		if o, ok := action.(engine.OutcomeReporter); ok {
+			o.Outcome(ctx, herr)
+		}
+		return resp, herr
 	}
 }
 

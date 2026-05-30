@@ -116,8 +116,39 @@ func (t *fakeTx) Rollback() error {
 	return nil
 }
 
+// --- failing driver shim: QueryContext always errors ---
+// Used by TestSQLReportsOutcomeToFailureBudget so the wrapped call's outcome
+// is a non-nil error, letting the failure budget fill with errors and trip.
+
+type failingDriver struct{}
+
+func (failingDriver) Open(name string) (dbdrv.Conn, error) {
+	return &failingConn{}, nil
+}
+
+type failingConn struct{}
+
+// Prepare/Close/Begin satisfy driver.Conn
+func (c *failingConn) Prepare(query string) (dbdrv.Stmt, error) {
+	return nil, errors.New("db down")
+}
+
+func (c *failingConn) Begin() (dbdrv.Tx, error) {
+	return nil, errors.New("db down")
+}
+
+func (c *failingConn) Close() error {
+	return nil
+}
+
+// QueryContext satisfies driver.QueryerContext and always errors.
+func (c *failingConn) QueryContext(_ context.Context, _ string, _ []dbdrv.NamedValue) (dbdrv.Rows, error) {
+	return nil, errors.New("db down")
+}
+
 func init() {
 	sql.Register("chaosfake", &fakeDriver{})
+	sql.Register("failing-shim", &failingDriver{})
 }
 
 func registerChaos(t *testing.T, name string, e *engine.Engine) {
@@ -208,5 +239,32 @@ func TestSqlOpNameIsClassified(t *testing.T) {
 	_, _ = db.ExecContext(context.Background(), "INSERT INTO users VALUES (1)")
 	if gotName != "INSERT" {
 		t.Fatalf("Op.Name = %q, want INSERT", gotName)
+	}
+}
+
+func TestSQLReportsOutcomeToFailureBudget(t *testing.T) {
+	// failingDriver is registered once. Its QueryContext always errors.
+	eng := engine.New(engine.WithFailureBudget(0.5, 2)).
+		AddRule(engine.NewRule(
+			engine.MatchKind(engine.OpSQL),
+			engine.WithFault(fault.Latency(0)),
+		).Named("slow"))
+	chaossql.Register("chaos:failing-outcome", "failing-shim", eng)
+	db, err := sql.Open("chaos:failing-outcome", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+	ctx := context.Background()
+	for range 2 {
+		_, _ = db.QueryContext(ctx, "SELECT 1") // fires; wrapped query errors
+	}
+	hits := eng.Hits("slow")
+	if hits != 2 {
+		t.Fatalf("Hits = %d, want 2", hits)
+	}
+	_, _ = db.QueryContext(ctx, "SELECT 2")
+	if eng.Hits("slow") != hits {
+		t.Fatalf("rule fired despite over-budget: Hits %d -> %d", hits, eng.Hits("slow"))
 	}
 }

@@ -2,6 +2,17 @@ package engine
 
 import "context"
 
+// Skip reasons passed to Observer.RuleSkipped. Observers may switch on these
+// instead of matching free-form strings.
+const (
+	ReasonCounter       = "counter"
+	ReasonRateLimit     = "rate_limit"
+	ReasonMaxConcurrent = "max_concurrent"
+	ReasonFailureBudget = "failure_budget"
+	ReasonDisabled      = "disabled"
+	ReasonKillSwitch    = "killswitch"
+)
+
 // Observer receives events from the engine each time it evaluates a named rule.
 // v1 ships no concrete implementations. Users supply their own via WithObserver.
 // The always-on per-named-rule hit counter (Engine.Hits) does not require

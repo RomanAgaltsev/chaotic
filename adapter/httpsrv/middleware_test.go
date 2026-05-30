@@ -121,3 +121,28 @@ func TestConnDropFaultClosesConnection(t *testing.T) {
 		t.Fatalf("err = %T %v, want net.Error or EOF", err, err)
 	}
 }
+
+func TestMiddlewareReportsServerErrorToBudget(t *testing.T) {
+	eng := engine.New(engine.WithFailureBudget(0.5, 2)).
+		AddRule(engine.NewRule(
+			engine.MatchKind(engine.OpHTTPServer),
+			engine.WithFault(fault.Latency(0)),
+		).Named("slow"))
+	// Downstream handler always 500s.
+	h := httpsrv.Middleware(eng)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	for range 2 {
+		reс := httptest.NewRecorder()
+		h.ServeHTTP(reс, httptest.NewRequest(http.MethodGet, "/x", nil))
+	}
+	hits := eng.Hits("slow")
+	if hits != 2 {
+		t.Fatalf("Hits = %d, want 2", hits)
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/y", nil))
+	if eng.Hits("slow") != hits {
+		t.Fatalf("rule fired despite over-budget: Hits %d -> %d", hits, eng.Hits("slow"))
+	}
+}

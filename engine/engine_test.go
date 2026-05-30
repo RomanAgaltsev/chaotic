@@ -25,7 +25,7 @@ func TestAddRuleEnablesEngine(t *testing.T) {
 
 func TestAddRuleIsCnainable(t *testing.T) {
 	e := New().AddRule(NewRule().Named("a")).AddRule(NewRule().Named("b"))
-	if got := e.rules.Load().Len(); got != 2 {
+	if got := e.rules.Load().rs.Len(); got != 2 {
 		t.Fatalf("rule count = %d, want 2", got)
 	}
 }
@@ -52,7 +52,7 @@ func TestAddRuleIsConcurrencySafe(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	if got := e.rules.Load().Len(); got != 50 {
+	if got := e.rules.Load().rs.Len(); got != 50 {
 		t.Fatalf("rule count = %d, want 50", got)
 	}
 }
@@ -232,5 +232,22 @@ func TestHitsCountsAreRaceFree(t *testing.T) {
 	wg.Wait()
 	if got := e.Hits("r"); got != 100 {
 		t.Fatalf("Hits(r) = %d, want 100", got)
+	}
+}
+
+func TestFiredActionImplementsOutcomeReporter(t *testing.T) {
+	e := New().AddRule(NewRule(WithFault(fault.Error(errors.New("x")))).Named("r"))
+	a := e.Eval(context.Background(), Op{})
+	if _, ok := a.(OutcomeReporter); !ok {
+		t.Fatal("fired action does not implement OutcomeReporter")
+	}
+}
+
+func TestPassDoesNotImplementOutcomeReporterWithoutBudget(t *testing.T) {
+	e := New().AddRule(NewRule(MatchKind(OpSQL), WithFault(fault.Error(errors.New("x")))).Named("r"))
+	// Op kind doesn't match the rule, no budget -> bare Pass
+	a := e.Eval(context.Background(), Op{Kind: OpHTTPClient})
+	if a != Pass {
+		t.Fatalf("expected bare Pass for non-match without budget, got %T", a)
 	}
 }

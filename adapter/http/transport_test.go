@@ -145,3 +145,37 @@ func TestOpAttrsIncludeHost(t *testing.T) {
 		t.Fatalf("Attrs.host empty, want set; got %v", gotAttrs)
 	}
 }
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
+func TestTransportReportsOutcomeToFailureBudget(t *testing.T) {
+	failing := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return nil, errors.New("downstream down")
+	})
+	eng := engine.New(engine.WithFailureBudget(0.5, 2)).
+		AddRule(engine.NewRule(
+			engine.MatchKind(engine.OpHTTPClient),
+			engine.WithFault(fault.Latency(0*time.Second)),
+		).Named("slow"))
+	client := &http.Client{
+		Transport: chaoshttp.WrapTransport(failing, eng),
+	}
+	for range 2 {
+		req, _ := http.NewRequest(http.MethodGet, "http://example.test/x", nil)
+		_, _ = client.Do(req) //nolint:bodyclose // test
+	}
+	hits := eng.Hits("slow")
+	if hits != 2 {
+		t.Fatalf("Hits = %d, want 2", hits)
+	}
+	// Budget now full at 100% >= 50% -> next call must not fire.
+	req, _ := http.NewRequest(http.MethodGet, "http://example.test/y", nil)
+	_, _ = client.Do(req) //nolint:bodyclose // test
+	if eng.Hits("slow") != hits {
+		t.Fatalf("rule fired despite over-budget: Hits %d -> %d", hits, eng.Hits("slow"))
+	}
+}

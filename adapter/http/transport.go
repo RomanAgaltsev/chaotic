@@ -50,6 +50,9 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, translateError(req.URL, err)
 	}
 	resp, err := t.wrapped.RoundTrip(req)
+	if o, ok := action.(engine.OutcomeReporter); ok {
+		o.Outcome(ctx, err)
+	}
 	_ = action.After(ctx)
 	return resp, err
 }

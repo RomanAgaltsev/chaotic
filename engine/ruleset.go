@@ -31,3 +31,37 @@ func (rs *sliceRuleSet) Snapshot() []Rule {
 	copy(out, rs.rules)
 	return out
 }
+
+// NewRuleSet returns an in-memory RuleSet backed by the given rules.
+// Sources (file/http) build their rules then call ReplaceRules(NewRuleSet(rules)).
+func NewRuleSet(rules []Rule) RuleSet {
+	return newSliceRuleSet(rules)
+}
+
+// ruleLister is an unexported fast path: Eval uses it to iterate without the
+// defensive copy that Shapshot makes. sliceRuleSet implements it.
+type ruleLister interface {
+	rulesForEval() []Rule
+}
+
+func (s *sliceRuleSet) rulesForEval() []Rule {
+	return s.rules
+}
+
+// ruleSetHolder lets the engine store a RuleSet interface inside
+// an atomic.Pointer (which requires a concrete element type).
+type ruleSetHolder struct {
+	rs RuleSet
+}
+
+// rulesFor extracts the rules for iteration: the no-copy fast path when the
+// set implements ruleLister, else a Snapshot.
+func rulesFor(h *ruleSetHolder) []Rule {
+	if h == nil || h.rs == nil {
+		return nil
+	}
+	if rl, ok := h.rs.(ruleLister); ok {
+		return rl.rulesForEval()
+	}
+	return h.rs.Snapshot()
+}

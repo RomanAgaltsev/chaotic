@@ -14,9 +14,10 @@ type Option func(*Engine)
 // Engine holds the rules and decision logic. Engines are not safe to copy -
 // always pass as *Engine. AddRule is safe for concurrent use, Eval is too.
 type Engine struct {
-	rules      atomic.Pointer[sliceRuleSet]
+	rules      atomic.Pointer[ruleSetHolder]
 	observer   Observer
 	killswitch KillSwitch
+	budget     *failureBudget
 
 	mu   sync.Mutex               // guards AddRule and hits map mutations
 	hits map[string]*atomic.Int64 // per-named-rule counters
@@ -41,8 +42,8 @@ func (e *Engine) Enabled() bool {
 	if e == nil {
 		return false
 	}
-	rs := e.rules.Load()
-	return rs != nil && rs.Len() > 0
+	h := e.rules.Load()
+	return h != nil && h.rs != nil && h.rs.Len() > 0
 }
 
 // AddRule appends a rule. Returns the engine for chaining. Append is
@@ -53,20 +54,19 @@ func (e *Engine) AddRule(r Rule) *Engine {
 	defer e.mu.Unlock()
 
 	var oldRules []Rule
-	if rs := e.rules.Load(); rs != nil {
-		oldRules = rs.rules
+	if h := e.rules.Load(); h != nil {
+		oldRules = rulesFor(h)
 	}
 	newRules := make([]Rule, len(oldRules), len(oldRules)+1)
 	copy(newRules, oldRules)
 	newRules = append(newRules, r)
-	e.rules.Store(newSliceRuleSet(newRules))
+	e.rules.Store(&ruleSetHolder{rs: newSliceRuleSet(newRules)})
 
 	if r.name != "" {
 		if _, ok := e.hits[r.name]; !ok {
 			e.hits[r.name] = new(atomic.Int64)
 		}
 	}
-
 	return e
 }
 
@@ -74,8 +74,39 @@ func (e *Engine) AddRule(r Rule) *Engine {
 func (e *Engine) Reset() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	e.rules.Store(newSliceRuleSet(nil))
+	e.rules.Store(&ruleSetHolder{rs: newSliceRuleSet(nil)})
 	e.hits = make(map[string]*atomic.Int64)
+}
+
+// ReplaceRules atomically swaps the active rule set. Used by rule sources on
+// reload. Concurrent Evals see either the old or the new set, never a torn one.
+// Hit counters are rebuilt for the new set's named rules.
+func (e *Engine) ReplaceRules(rs RuleSet) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.rules.Store(&ruleSetHolder{rs: rs})
+	e.hits = make(map[string]*atomic.Int64)
+	for _, r := range rs.Snapshot() {
+		if r.name != "" {
+			if _, ok := e.hits[r.name]; !ok {
+				e.hits[r.name] = new(atomic.Int64)
+			}
+		}
+	}
+}
+
+// WithRuleSource backs the engine with rs at construction (instead of AddRule).
+func WithRuleSource(rs RuleSet) Option {
+	return func(e *Engine) {
+		e.rules.Store(&ruleSetHolder{rs: rs})
+		for _, r := range rs.Snapshot() {
+			if r.name != "" {
+				if _, ok := e.hits[r.name]; !ok {
+					e.hits[r.name] = new(atomic.Int64)
+				}
+			}
+		}
+	}
 }
 
 // Eval evaluates the op against all configured rules and returns the matching
@@ -87,43 +118,76 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 	if e.killswitch != nil && e.killswitch(ctx, op) {
 		return Pass
 	}
-	rs := e.rules.Load()
-	for _, r := range rs.rules {
+	h := e.rules.Load()
+	for _, r := range rulesFor(h) {
 		if !r.matches(ctx, op) {
 			continue
 		}
 		if !r.counter.shouldFire() {
-			if e.observer != nil && r.name != "" {
-				e.observer.RuleSkipped(r.name, op, "counter")
-			}
+			e.notifySkip(r.name, op, ReasonCounter)
 			continue
 		}
-		// Hit: increment counter, build action, notify observer, return.
-		if r.name != "" {
-			e.mu.Lock()
-			c := e.hits[r.name]
-			e.mu.Unlock()
-			if c != nil {
-				c.Add(1)
-			}
+		if e.budget != nil && e.budget.overBudget() {
+			e.notifySkip(r.name, op, ReasonFailureBudget)
+			return e.passOrTrack(op)
 		}
-		act := ruleAction{
-			faults: r.faults,
-		}
+		e.recordHit(r.name)
+		act := &ruleAction{faults: r.faults, eng: e, op: op}
 		if e.observer != nil && r.name != "" {
 			e.observer.RuleFired(r.name, op, act)
 		}
 		return act
 	}
-	return Pass
+	return e.passOrTrack(op)
 }
 
-// ruleAction runs a rule's faults in order during Before.
+// passOrTrack returns the bare Pass singleton unless a failure budget is
+// configured, in which case it returns an outcome-tracking action so every
+// call's outcome is recorded.
+func (e *Engine) passOrTrack(op Op) Action {
+	if e.budget == nil {
+		return Pass
+	}
+	return &trackingAction{
+		eng: e,
+		op:  op,
+	}
+}
+
+func (e *Engine) notifySkip(name string, op Op, reason string) {
+	if e.observer != nil && name != "" {
+		e.observer.RuleSkipped(name, op, reason)
+	}
+}
+
+func (e *Engine) recordHit(name string) {
+	if name == "" {
+		return
+	}
+	e.mu.Lock()
+	c := e.hits[name]
+	e.mu.Unlock()
+	if c != nil {
+		c.Add(1)
+	}
+}
+
+// recordOutcome feeds the wrapped call's result ti the failure budget, if any.
+func (e *Engine) recordOutcome(callErr error) {
+	if e.budget != nil {
+		e.budget.record(callErr)
+	}
+}
+
+// ruleAction runs a rule's faults in order during Before and reports the
+// wrapped call's outcome to the engine.
 type ruleAction struct {
 	faults []fault.Fault
+	eng    *Engine
+	op     Op
 }
 
-func (a ruleAction) Before(ctx context.Context) error {
+func (a *ruleAction) Before(ctx context.Context) error {
 	for _, f := range a.faults {
 		if err := f.Apply(ctx); err != nil {
 			return err
@@ -132,8 +196,35 @@ func (a ruleAction) Before(ctx context.Context) error {
 	return nil
 }
 
-func (a ruleAction) After(ctx context.Context) error {
+func (a *ruleAction) After(_ context.Context) error {
 	return nil
+}
+
+func (a *ruleAction) Outcome(_ context.Context, callErr error) {
+	if a.eng != nil {
+		a.eng.recordOutcome(callErr)
+	}
+}
+
+// trackingAction injects nothing. It exists only to record the wrapped
+// call's outcome into the failure budget on non-firing paths.
+type trackingAction struct {
+	eng *Engine
+	op  Op
+}
+
+func (a *trackingAction) Before(_ context.Context) error {
+	return nil
+}
+
+func (a *trackingAction) After(_ context.Context) error {
+	return nil
+}
+
+func (a *trackingAction) Outcome(_ context.Context, callErr error) {
+	if a.eng != nil {
+		a.eng.recordOutcome(callErr)
+	}
 }
 
 // Hits returns the number of times a named rule has fired.
@@ -164,4 +255,14 @@ func (e *Engine) AllHits() map[string]int {
 		out[name] = int(c.Load())
 	}
 	return out
+}
+
+// WithFailureBudget stops injecting faults once the observed error rate over a
+// sliding window of the last window calls reaches maxErrorRate. Requires the
+// adapters to report outcomes (they do, via OutcomeReporter). Panics if
+// maxErrorRate is outside [0, 1] or window < 1.
+func WithFailureBudget(maxErrorRate float64, window int) Option {
+	return func(e *Engine) {
+		e.budget = newFailureBudget(maxErrorRate, window)
+	}
 }

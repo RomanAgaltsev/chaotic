@@ -207,3 +207,28 @@ func TestStreamServerInterceptorErrorShortCircuits(t *testing.T) {
 		t.Fatalf("status = %s, want Internal", st.Code())
 	}
 }
+
+func TestUnaryClientReportsOutcomeToBudget(t *testing.T) {
+	eng := engine.New(engine.WithFailureBudget(0.5, 2)).
+		AddRule(engine.NewRule(
+			engine.MatchKind(engine.OpGRPCClient),
+			engine.WithFault(fault.Latency(0)),
+		).Named("slow"))
+	intercept := chaosgrpc.UnaryClientInterceptor(eng)
+	failingInvoker := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+		return status.Error(codes.Unavailable, "backend down")
+	}
+	call := func() {
+		_ = intercept(context.Background(), "/svc/M", nil, nil, nil, failingInvoker)
+	}
+	call()
+	call()
+	hits := eng.Hits("slow")
+	if hits != 2 {
+		t.Fatalf("hits = %d, want 2", hits)
+	}
+	call()
+	if eng.Hits("slow") != hits {
+		t.Fatalf("rule fired despite over-budget: Hits %d -> %d", hits, eng.Hits("slow"))
+	}
+}

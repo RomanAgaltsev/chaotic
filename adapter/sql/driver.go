@@ -71,18 +71,16 @@ type chaosConn struct {
 }
 
 func (c *chaosConn) Prepare(query string) (driver.Stmt, error) {
-	if err := c.runChaos(context.Background(), query, "PREPARE"); err != nil {
+	action, err := c.runChaos(context.Background(), query, "PREPARE")
+	if err != nil {
 		return nil, translate(err)
 	}
-	s, err := c.wrapped.Prepare(query)
-	if err != nil {
-		return nil, err
+	s, perr := c.wrapped.Prepare(query)
+	reportOutcome(context.Background(), action, perr)
+	if perr != nil {
+		return nil, perr
 	}
-	return &chaosStmt{
-		wrapped: s,
-		eng:     c.eng,
-		query:   query,
-	}, nil
+	return &chaosStmt{wrapped: s, eng: c.eng, query: query}, nil
 }
 
 func (c *chaosConn) Close() error {
@@ -94,49 +92,64 @@ func (c *chaosConn) Begin() (driver.Tx, error) {
 }
 
 func (c *chaosConn) Ping(ctx context.Context) error {
-	if err := c.runChaos(ctx, "", "PING"); err != nil {
+	action, err := c.runChaos(ctx, "", "PING")
+	if err != nil {
 		return translate(err)
 	}
+	var perr error
 	if p, ok := c.wrapped.(driver.Pinger); ok {
-		return p.Ping(ctx)
+		perr = p.Ping(ctx)
 	}
-	return nil
+	reportOutcome(ctx, action, perr)
+	return perr
 }
 
 func (c *chaosConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	ec, ok := c.wrapped.(driver.ExecerContext)
-	if !ok {
-		return nil, driver.ErrSkip // let the Prepare path own chaos for this op
-	}
-	if err := c.runChaos(ctx, query, classifySQL(query)); err != nil {
+	action, err := c.runChaos(ctx, query, classifySQL(query))
+	if err != nil {
 		return nil, translate(err)
 	}
-	return ec.ExecContext(ctx, query, args)
+	if ec, ok := c.wrapped.(driver.ExecerContext); ok {
+		res, eerr := ec.ExecContext(ctx, query, args)
+		reportOutcome(ctx, action, eerr)
+		return res, eerr
+	}
+	reportOutcome(ctx, action, nil)
+	return nil, driver.ErrSkip
 }
 
 func (c *chaosConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	if err := c.runChaos(ctx, query, classifySQL(query)); err != nil {
+	action, err := c.runChaos(ctx, query, classifySQL(query))
+	if err != nil {
 		return nil, translate(err)
 	}
 	if qc, ok := c.wrapped.(driver.QueryerContext); ok {
-		return qc.QueryContext(ctx, query, args)
+		rows, qerr := qc.QueryContext(ctx, query, args)
+		reportOutcome(ctx, action, qerr)
+		return rows, qerr
 	}
+	reportOutcome(ctx, action, nil)
 	return nil, driver.ErrSkip
 }
 
 func (c *chaosConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
-	if err := c.runChaos(ctx, "", "BEGIN"); err != nil {
+	action, err := c.runChaos(ctx, "", "BEGIN")
+	if err != nil {
 		return nil, translate(err)
 	}
 	if btc, ok := c.wrapped.(driver.ConnBeginTx); ok {
-		return btc.BeginTx(ctx, opts)
+		tx, berr := btc.BeginTx(ctx, opts)
+		reportOutcome(ctx, action, berr)
+		return tx, berr
 	}
-	return c.wrapped.Begin() //nolint:staticcheck // fallback for drivers that don't implement ConnBeginTx
+	tx, berr := c.wrapped.Begin() //nolint:staticcheck // fallback when wrapped driver doesn't implement ConnBeginTx
+	reportOutcome(ctx, action, berr)
+	return tx, berr
 }
 
-func (c *chaosConn) runChaos(ctx context.Context, query string, method string) error {
+func (c *chaosConn) runChaos(ctx context.Context, query string, method string) (engine.Action, error) {
 	if !c.eng.Enabled() {
-		return nil
+		return nil, nil
 	}
 	op := engine.Op{
 		Kind:   engine.OpSQL,
@@ -148,7 +161,7 @@ func (c *chaosConn) runChaos(ctx context.Context, query string, method string) e
 		op.Attrs["query"] = query
 	}
 	action := c.eng.Eval(ctx, op)
-	return action.Before(ctx)
+	return action, action.Before(ctx)
 }
 
 type chaosStmt struct {
@@ -166,22 +179,28 @@ func (s *chaosStmt) NumInput() int {
 }
 
 func (s *chaosStmt) Exec(args []driver.Value) (driver.Result, error) {
-	if err := s.runChaos(context.Background()); err != nil {
+	action, err := s.runChaos(context.Background())
+	if err != nil {
 		return nil, translate(err)
 	}
-	return s.wrapped.Exec(args) //nolint:staticcheck // required by driver.Stmt interface
+	res, eerr := s.wrapped.Exec(args) //nolint:staticcheck // required by driver.Stmt interface; delegates to wrapped stmt
+	reportOutcome(context.Background(), action, eerr)
+	return res, eerr
 }
 
 func (s *chaosStmt) Query(args []driver.Value) (driver.Rows, error) {
-	if err := s.runChaos(context.Background()); err != nil {
+	action, err := s.runChaos(context.Background())
+	if err != nil {
 		return nil, translate(err)
 	}
-	return s.wrapped.Query(args) //nolint:staticcheck // required by driver.Stmt interface
+	rows, qerr := s.wrapped.Query(args) //nolint:staticcheck // required by driver.Stmt interface; delegates to wrapped stmt
+	reportOutcome(context.Background(), action, qerr)
+	return rows, qerr
 }
 
-func (s *chaosStmt) runChaos(ctx context.Context) error {
+func (s *chaosStmt) runChaos(ctx context.Context) (engine.Action, error) {
 	if !s.eng.Enabled() {
-		return nil
+		return nil, nil
 	}
 	op := engine.Op{
 		Kind:   engine.OpSQL,
@@ -190,7 +209,7 @@ func (s *chaosStmt) runChaos(ctx context.Context) error {
 		Attrs:  map[string]string{"query": s.query},
 	}
 	action := s.eng.Eval(ctx, op)
-	return action.Before(ctx)
+	return action, action.Before(ctx)
 }
 
 // translate converts a fault error into a database/sql-friendly error.
@@ -203,4 +222,12 @@ func translate(err error) error {
 		return err
 	}
 	return err
+}
+
+// reportOutcome forwards the wrapped call's error to the engine if the action
+// supports it. A nil action (chaos disabled) is a no-op.
+func reportOutcome(ctx context.Context, action engine.Action, callErr error) {
+	if o, ok := action.(engine.OutcomeReporter); ok {
+		o.Outcome(ctx, callErr)
+	}
 }

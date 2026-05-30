@@ -4,6 +4,7 @@ package httpsrv
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/ag4r/chaotic/engine"
@@ -33,7 +34,15 @@ func Middleware(eng *engine.Engine) func(http.Handler) http.Handler {
 				handleErr(w, err)
 				return
 			}
-			next.ServeHTTP(w, r)
+			rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+			next.ServeHTTP(rec, r)
+			var callErr error
+			if rec.status >= 500 {
+				callErr = fmt.Errorf("chaotic: server responded %d", rec.status)
+			}
+			if o, ok := action.(engine.OutcomeReporter); ok {
+				o.Outcome(ctx, callErr)
+			}
 			_ = action.After(ctx)
 		})
 	}
@@ -55,4 +64,30 @@ func handleErr(w http.ResponseWriter, err error) {
 		return
 	}
 	http.Error(w, err.Error(), http.StatusInternalServerError)
+}
+
+// statusRecorder captures the response status for outcome reporting. It exposes
+// the underlying ResponseWriter via Unwrap so http.ResponseController users
+// retain Flush/Hijack support.
+type statusRecorder struct {
+	http.ResponseWriter
+	status  int
+	written bool
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	if !r.written {
+		r.status = code
+		r.written = true
+	}
+	r.ResponseWriter.WriteHeader(code)
+}
+
+func (r *statusRecorder) Write(b []byte) (int, error) {
+	r.written = true
+	return r.ResponseWriter.Write(b)
+}
+
+func (r *statusRecorder) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
 }
