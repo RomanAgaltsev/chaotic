@@ -6,9 +6,3 @@
 ### Features
 
 * Outcome reporting and failure budget ([#2](https://github.com/ag4r/chaotic/issues/2)) ([bde7155](https://github.com/ag4r/chaotic/commit/bde7155bd5626013a76c6526e3a5c024a3172a87))
-
-## Changelog
-
-All notable changes to this project are documented here. This file is
-maintained by [release-please](https://github.com/googleapis/release-please)
-from Conventional Commit messages.
