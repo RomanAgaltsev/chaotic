@@ -14,13 +14,17 @@ type Option func(*Engine)
 // Engine holds the rules and decision logic. Engines are not safe to copy -
 // always pass as *Engine. AddRule is safe for concurrent use, Eval is too.
 type Engine struct {
-	rules      atomic.Pointer[ruleSetHolder]
-	observer   Observer
-	killswitch KillSwitch
-	budget     *failureBudget
+	rules       atomic.Pointer[ruleSetHolder]
+	observer    Observer
+	killswitch  KillSwitch
+	budget      *failureBudget
+	rateLimiter *tokenBucket
+	maxConc     *semaphore
+	guard       func() bool
 
-	mu   sync.Mutex               // guards AddRule and hits map mutations
-	hits map[string]*atomic.Int64 // per-named-rule counters
+	mu       sync.Mutex               // guards AddRule and hits map mutations
+	hits     map[string]*atomic.Int64 // per-named-rule counters
+	disabled atomic.Bool
 }
 
 // New constructs an engine with no rules.
@@ -32,14 +36,27 @@ func New(opts ...Option) *Engine {
 	for _, o := range opts {
 		o(e)
 	}
+	if e.guard != nil && e.guard() {
+		panic("chaotic: production guard tripped")
+	}
 	return e
 }
+
+// Disable flips an atomic flag so Enabled reports false and adapters take the
+// passthrough path. Faster than Reset for "kill the chaos now". Reversible.
+func (e *Engine) Disable() { e.disabled.Store(true) }
+
+// Enable clears the disable flag.
+func (e *Engine) Enable() { e.disabled.Store(false) }
 
 // Enabled reports whether the engine has any rules. Adapters call this
 // before constructing an Op so the no-op path stays alloc-free.
 // Nil-safe: a nil engine reports false.
 func (e *Engine) Enabled() bool {
 	if e == nil {
+		return false
+	}
+	if e.disabled.Load() {
 		return false
 	}
 	h := e.rules.Load()
@@ -131,8 +148,21 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 			e.notifySkip(r.name, op, ReasonFailureBudget)
 			return e.passOrTrack(op)
 		}
+		if e.rateLimiter != nil && !e.rateLimiter.allow() {
+			e.notifySkip(r.name, op, ReasonRateLimit)
+			return e.passOrTrack(op)
+		}
+		var release func()
+		if e.maxConc != nil {
+			rel, ok := e.maxConc.tryAcquire()
+			if !ok {
+				e.notifySkip(r.name, op, ReasonMaxConcurrent)
+				return e.passOrTrack(op)
+			}
+			release = rel
+		}
 		e.recordHit(r.name)
-		act := &ruleAction{faults: r.faults, eng: e, op: op}
+		act := &ruleAction{faults: r.faults, eng: e, op: op, release: release}
 		if e.observer != nil && r.name != "" {
 			e.observer.RuleFired(r.name, op, act)
 		}
@@ -182,14 +212,17 @@ func (e *Engine) recordOutcome(callErr error) {
 // ruleAction runs a rule's faults in order during Before and reports the
 // wrapped call's outcome to the engine.
 type ruleAction struct {
-	faults []fault.Fault
-	eng    *Engine
-	op     Op
+	faults      []fault.Fault
+	eng         *Engine
+	op          Op
+	release     func()
+	releaseOnce sync.Once
 }
 
 func (a *ruleAction) Before(ctx context.Context) error {
 	for _, f := range a.faults {
 		if err := f.Apply(ctx); err != nil {
+			a.doRelease()
 			return err
 		}
 	}
@@ -197,12 +230,19 @@ func (a *ruleAction) Before(ctx context.Context) error {
 }
 
 func (a *ruleAction) After(_ context.Context) error {
+	a.doRelease()
 	return nil
 }
 
 func (a *ruleAction) Outcome(_ context.Context, callErr error) {
 	if a.eng != nil {
 		a.eng.recordOutcome(callErr)
+	}
+}
+
+func (a *ruleAction) doRelease() {
+	if a.release != nil {
+		a.releaseOnce.Do(a.release)
 	}
 }
 
@@ -264,5 +304,31 @@ func (e *Engine) AllHits() map[string]int {
 func WithFailureBudget(maxErrorRate float64, window int) Option {
 	return func(e *Engine) {
 		e.budget = newFailureBudget(maxErrorRate, window)
+	}
+}
+
+// WithRateLimit caps the number of faults that actually fire to rps per second
+// (global across all rules). Matched calls beyond the limit return Pass.
+func WithRateLimit(rps int) Option {
+	return func(e *Engine) {
+		e.rateLimiter = newTokenBucket(rps)
+	}
+}
+
+// WithMaxConcurrent caps the number of simultaneously in-flight faulted calls
+// to n. Matched calls that would exceed the cap return Pass. The slot is held
+// for the duration of the fault (including latency sleeps) and released when
+// the adapter calls After (or when Before short-circuits).
+func WithMaxConcurrent(n int) Option {
+	return func(e *Engine) {
+		e.maxConc = newSemaphore(n)
+	}
+}
+
+// WithProductionGuard makes New panic if check returns true. Supply a check
+// that detects an environment chaos must not run in (e.g. reads an env var).
+func WithProductionGuard(check func() bool) Option {
+	return func(e *Engine) {
+		e.guard = check
 	}
 }

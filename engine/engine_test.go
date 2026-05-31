@@ -251,3 +251,36 @@ func TestPassDoesNotImplementOutcomeReporterWithoutBudget(t *testing.T) {
 		t.Fatalf("expected bare Pass for non-match without budget, got %T", a)
 	}
 }
+
+func TestProductionGuardPanicsWhenTripped(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("expected New to panic when guard returns true")
+		}
+	}()
+	New(WithProductionGuard(func() bool { return true }))
+}
+
+func TestProductionGuardAllowsWhenFalse(t *testing.T) {
+	if e := New(WithProductionGuard(func() bool { return false })); e == nil {
+		t.Fatal("expected a constructed engine")
+	}
+}
+
+func TestDisableStopsChaosAndEnableResumes(t *testing.T) {
+	e := New().AddRule(NewRule(WithFault(fault.Error(errors.New("x")))).Named("r"))
+	if !e.Enabled() {
+		t.Fatal("should be enabled with a rule")
+	}
+	e.Disable()
+	if e.Enabled() {
+		t.Fatal("should report disabled")
+	}
+	if a := e.Eval(context.Background(), Op{}); a != Pass {
+		t.Fatal("disabled engine should return Pass")
+	}
+	e.Enable()
+	if !e.Enabled() {
+		t.Fatal("should be re-enabled")
+	}
+}
