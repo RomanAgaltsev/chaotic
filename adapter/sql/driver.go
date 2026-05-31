@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 // Package sql wraps a database/sql driver so calls are subject to chaos.
 // Register a chaos driver name that points at an existing registered
 // driver, then sql.Open chaos name.

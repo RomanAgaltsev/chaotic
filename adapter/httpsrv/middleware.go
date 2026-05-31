@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 // Package httpsrv provides net/http middleware that subjects inbound requests
 // to chaos. The Middleware mounts in any net/http chain.
 package httpsrv

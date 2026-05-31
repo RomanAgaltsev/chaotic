@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 // Package http wraps an http.RoundTripper so outbound client calls are
 // subject to chaos. Construct an engine, attach rules, then pass
 // http.DefaultTransport (or any RoundTripper) and the engine to WrapTransport.

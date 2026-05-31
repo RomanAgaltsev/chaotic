@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 // Package grpc provides client and server interceptors that subject gRPC
 // calls to chaos. This module is separate from chaotic's main module
 // so users who only need HTTP or SQL chaos don't pull in the grpc dep tree.

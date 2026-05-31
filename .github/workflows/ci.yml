@@ -1,0 +1,26 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - name: Build, vet, test every module (race)
+        run: |
+          set -e
+          for dir in $(find . -name go.mod -execdir pwd \;); do
+            echo "== module: $dir =="
+            (cd "$dir" && go build ./... && go vet ./... && go test -race ./...)
+          done
+      - name: chaos_off build + zero-alloc gate (every module)
+        run: |
+          set -e
+          for dir in $(find . -name go.mod -execdir pwd \;); do
+            echo "== chaos_off module: $dir =="
+            (cd "$dir" && go build -tags chaos_off ./... && go test -tags chaos_off -run ZeroAllocUnderChaosOff ./...)
+          done
