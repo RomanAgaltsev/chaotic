@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ag4r/chaotic/compare/v1.0.0...v1.1.0) (2026-05-31)
+
+
+### Features
+
+* safety rails ([#4](https://github.com/ag4r/chaotic/issues/4)) ([55fb064](https://github.com/ag4r/chaotic/commit/55fb0643844b517b1aade1bfba948739dc269aeb))
+
 ## 1.0.0 (2026-05-30)
 
 
