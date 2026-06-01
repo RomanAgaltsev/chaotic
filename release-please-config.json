@@ -7,7 +7,6 @@
   "bump-patch-for-minor-pre-major": true,
   "packages": {
     ".": {
-      "component": "chaotic",
       "include-component-in-tag": false
     },
     "adapter/grpc": {
