@@ -11,6 +11,15 @@
     },
     "adapter/grpc": {
       "component": "adapter/grpc"
+    },
+    "observer/otel": {
+      "component": "observer/otel"
+    },
+    "observer/prometheus": {
+      "component": "observer/prometheus"
+    },
+    "observer/slog": {
+      "component": "observer/slog"
     }
   }
 }
