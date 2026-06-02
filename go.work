@@ -6,4 +6,6 @@ use (
 	./observer/otel
 	./observer/prometheus
 	./observer/slog
+	./source/file
+	./source/http
 )

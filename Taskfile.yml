@@ -8,7 +8,7 @@ env:
 vars:
   # The set of Go modules in this repo. Add new submodules here as they land
   # (also register them in go.work and release-please-config.json).
-  MODULES: ". adapter/grpc"
+  MODULES: ". adapter/grpc observer/otel observer/prometheus observer/slog source/file source/http"
 
 tasks:
   default:
@@ -113,6 +113,13 @@ tasks:
         task: lint
         vars: { MODULE: '{{.ITEM}}' }
 
+  fmt:all:
+    desc: "Format across all modules"
+    cmds:
+      - for: { var: MODULES }
+        task: fmt
+        vars: { MODULE: '{{.ITEM}}' }
+
   vuln:all:
     desc: "govulncheck across all modules"
     cmds:
@@ -132,6 +139,13 @@ tasks:
     cmds:
       - for: { var: MODULES }
         task: tidy:check
+        vars: { MODULE: '{{.ITEM}}' }
+
+  tidy:all:
+    desc: "tidy across all modules"
+    cmds:
+      - for: { var: MODULES }
+        task: tidy
         vars: { MODULE: '{{.ITEM}}' }
 
   ci:
