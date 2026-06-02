@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/ag4r/chaotic/compare/v1.2.0...v1.3.0) (2026-06-02)
+
+
+### Features
+
+* rule sources ([#13](https://github.com/ag4r/chaotic/issues/13)) ([e22e59b](https://github.com/ag4r/chaotic/commit/e22e59b0d6fce1afc54117ec075b861ea83d5b14))
+
 ## [1.2.0](https://github.com/ag4r/chaotic/compare/v1.1.0...v1.2.0) (2026-06-01)
 
 
