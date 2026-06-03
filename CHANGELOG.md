@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/ag4r/chaotic/compare/v1.5.0...v1.6.0) (2026-06-03)
+
+
+### Features
+
+* examples ([#19](https://github.com/ag4r/chaotic/issues/19)) ([bbcf96c](https://github.com/ag4r/chaotic/commit/bbcf96c25e7f17fd9069d3afccd013d678becd32))
+
 ## [1.5.0](https://github.com/ag4r/chaotic/compare/v1.4.0...v1.5.0) (2026-06-03)
 
 
