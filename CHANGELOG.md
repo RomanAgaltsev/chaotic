@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/ag4r/chaotic/compare/v1.4.0...v1.5.0) (2026-06-03)
+
+
+### Features
+
+* chaos package ([#17](https://github.com/ag4r/chaotic/issues/17)) ([c0f4c41](https://github.com/ag4r/chaotic/commit/c0f4c410d5f83560db08c91f004bd15bfdef1424))
+
 ## [1.4.0](https://github.com/ag4r/chaotic/compare/v1.3.0...v1.4.0) (2026-06-03)
 
 
