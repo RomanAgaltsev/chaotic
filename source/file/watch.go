@@ -2,7 +2,9 @@ package file
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"path/filepath"
 
 	"github.com/ag4r/chaotic/engine"
 	"github.com/fsnotify/fsnotify"
@@ -15,18 +17,18 @@ func Watch(ctx context.Context, path string, eng *engine.Engine, logger *slog.Lo
 	if logger == nil {
 		logger = slog.Default()
 	}
-	rs, err := Load(path)
-	if err != nil {
+	if _, err := reload(path, eng); err != nil {
 		return err
 	}
-	eng.ReplaceRules(rs)
 
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
 	defer func() { _ = w.Close() }()
-	if err := w.Add(path); err != nil {
+	dir := filepath.Dir(path)
+	base := filepath.Base(path)
+	if err := w.Add(dir); err != nil {
 		return err
 	}
 	for {
@@ -37,16 +39,18 @@ func Watch(ctx context.Context, path string, eng *engine.Engine, logger *slog.Lo
 			if !ok {
 				return nil
 			}
+			if filepath.Base(ev.Name) != base {
+				continue
+			}
 			if ev.Op&(fsnotify.Write|fsnotify.Create) == 0 {
 				continue
 			}
-			newRS, lerr := Load(path)
+			n, lerr := reload(path, eng)
 			if lerr != nil {
 				logger.Warn("chaotic: rule reload failed, keeping previous rules", "error", lerr)
 				continue
 			}
-			eng.ReplaceRules(newRS)
-			logger.Info("chaotic: rule reloaded", "count", newRS.Len())
+			logger.Info("chaotic: rule reloaded", "count", n)
 		case werr, ok := <-w.Errors:
 			if !ok {
 				return nil
@@ -54,4 +58,21 @@ func Watch(ctx context.Context, path string, eng *engine.Engine, logger *slog.Lo
 			logger.Warn("chaotic: watcher error", "error", werr)
 		}
 	}
+}
+
+// reload loads path and atomically swaps eng's rules. It recovers any panic
+// from the load/build path and converts it to an error, so a watcher goroutine
+// can never be killed by malformed rules file.
+func reload(path string, eng *engine.Engine) (n int, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("chaotic: panic during rule reload: %v", r)
+		}
+	}()
+	rs, lerr := Load(path)
+	if lerr != nil {
+		return 0, lerr
+	}
+	eng.ReplaceRules(rs)
+	return rs.Len(), nil
 }

@@ -18,7 +18,7 @@ import (
 )
 
 // WrapTransport returns a RoundTripper that consults eng on every request.
-// If eng is nil or has no rules, tha wrapper is a near-zero-cost passthrough.
+// If eng is nil or has no rules, the wrapper is a near-zero-cost passthrough.
 func WrapTransport(rt http.RoundTripper, eng *engine.Engine) http.RoundTripper {
 	if rt == nil {
 		rt = http.DefaultTransport

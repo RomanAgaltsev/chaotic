@@ -2,6 +2,8 @@ module github.com/ag4r/chaotic/source/http
 
 go 1.26
 
+toolchain go1.26.4
+
 require github.com/ag4r/chaotic v0.0.0
 
 require (

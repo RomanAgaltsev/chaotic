@@ -29,7 +29,7 @@ type matcher func(ctx context.Context, op Op) bool
 // NewRule constructs a Rule. The default counter is Always, default action is
 // no faults (Pass).
 func NewRule(opts ...RuleOption) Rule {
-	r := Rule{counter: alwaysCounter{}}
+	r := Rule{counter: &alwaysCounter{}}
 	for _, o := range opts {
 		o(&r)
 	}
@@ -100,14 +100,14 @@ type counter interface {
 
 type alwaysCounter struct{}
 
-func (a alwaysCounter) shouldFire() bool {
+func (a *alwaysCounter) shouldFire() bool {
 	return true
 }
 
 // Always is default counter: every match fires the rule.
 func Always() RuleOption {
 	return func(r *Rule) {
-		r.counter = alwaysCounter{}
+		r.counter = &alwaysCounter{}
 	}
 }
 

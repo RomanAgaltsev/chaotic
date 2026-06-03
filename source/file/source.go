@@ -10,13 +10,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Document is the YAML schemaL a meta block and a list of rule specs.
+// Document is the YAML schema: a meta block and a list of rule specs.
 type Document struct {
 	Meta  Meta              `yaml:"meta"`
 	Rules []engine.RuleSpec `yaml:"rules"`
 }
 
-// Meta cerries schema metadata. Version is reserved for future migration.
+// Meta carries schema metadata. Version is reserved for future migration.
 type Meta struct {
 	Version int `yaml:"version"`
 }

@@ -38,16 +38,16 @@ type Action interface {
 // matches. Pass is exported so tests can assert against it.
 type passAction struct{}
 
-func (a *passAction) Before(ctx context.Context) error { return nil }
-func (a *passAction) After(ctx context.Context) error  { return nil }
+func (a passAction) Before(ctx context.Context) error { return nil }
+func (a passAction) After(ctx context.Context) error  { return nil }
 
 // Pass is the canonical no-op action.
-var Pass Action = &passAction{}
+var Pass Action = passAction{}
 
 // OutcomeReporter is an optional interface an Action may implement to receive
 // the result of the wrapped call. Adapters call Outcome (when implemented)
 // after the wrapped boundary returns. callErr is the wrapped call's error
-// (nil or success). It is not  invoked Before short-circuits the call.
+// (nil or success). It is not invoked when Before short-circuits the call.
 type OutcomeReporter interface {
 	Outcome(ctx context.Context, callErr error)
 }

@@ -284,3 +284,17 @@ func TestDisableStopsChaosAndEnableResumes(t *testing.T) {
 		t.Fatal("should be re-enabled")
 	}
 }
+
+func TestKillSwitchStillTracksOutcome(t *testing.T) {
+	e := New(
+		WithFailureBudget(0.5, 10),
+		WithKillSwitch(func(context.Context, Op) bool { return true }),
+	).AddRule(NewRule(MatchKind(OpHTTPClient), WithFault(fault.Error(errors.New("x")))).Named("k"))
+	ctx := context.Background()
+	act := e.Eval(ctx, Op{Kind: OpHTTPClient})
+	// Kill switch suppresses the fault, but a budget-tracking action must be
+	// returned so the call's outcome is still recorded.
+	if _, ok := act.(OutcomeReporter); !ok {
+		t.Fatal("kill-switched call returned a non-tracking action; budget will under-count")
+	}
+}

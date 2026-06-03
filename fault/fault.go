@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"math/rand/v2"
+	"sync"
 	"time"
 )
 
@@ -47,6 +48,16 @@ func Jittered(min, max time.Duration) Fault {
 	}
 }
 
+func (latencyFault) Kind() Kind {
+	return KindLatency
+}
+
+// Duration reports the fixed sleep this fault injects, letting tooling (e.g. a
+// RichObserver latency histogram) record it without running the fault.
+func (l latencyFault) Duration() time.Duration {
+	return l.d
+}
+
 type jitteredFault struct {
 	min, max time.Duration
 }
@@ -58,6 +69,17 @@ func (j jitteredFault) Apply(ctx context.Context) error {
 		d = j.min + time.Duration(rand.Int64N(span+1)) //nolint:gosec // non-cryptographic randomness is intentional for jitter duration
 	}
 	return sleep(ctx, d)
+}
+
+func (jitteredFault) Kind() Kind {
+	return KindJittered
+}
+
+// Duration reports the upper bound of the jitter window. The actual sleep is a
+// random draw in [min, max] that Apply does not expose, so tooling that reads
+// Duration sees the configured ceiling, not the per-call value.
+func (j jitteredFault) Duration() time.Duration {
+	return j.max
 }
 
 func sleep(ctx context.Context, d time.Duration) error {
@@ -100,12 +122,20 @@ func Panic(v any) Fault {
 	}
 }
 
+func (errorFault) Kind() Kind {
+	return KindError
+}
+
 type panicFault struct {
 	v any
 }
 
-func (p panicFault) Apply(ctx context.Context) error {
+func (p panicFault) Apply(_ context.Context) error {
 	panic(p.v)
+}
+
+func (panicFault) Kind() Kind {
+	return KindPanic
 }
 
 // ConnDrop returns ErrConnDrop. Each adapter detects this sentinel and
@@ -118,4 +148,49 @@ type connDropFault struct{}
 
 func (connDropFault) Apply(context.Context) error {
 	return ErrConnDrop
+}
+
+func (connDropFault) Kind() Kind {
+	return KindConnDrop
+}
+
+// JitteredSeed is like Jittered but draws from a seeded PCG source, so the
+// sequence of sleep durations is reproducible across runs with the same seed.
+// Use it when a chaos test must be deterministically replayable. The draw is
+// mutex-guarded. The fault is safe for concurrent use.
+func JitteredSeed(min, max time.Duration, seed int64) Fault {
+	return &seededJitter{
+		min: min,
+		max: max,
+		rng: rand.New(rand.NewPCG(uint64(seed), uint64(seed)^0x9E3779B97F4A7C15)), //nolint:gosec // non-cryptographic randomness is intentional
+	}
+}
+
+type seededJitter struct {
+	min, max time.Duration
+	mu       sync.Mutex
+	rng      *rand.Rand
+}
+
+func (j *seededJitter) draw() time.Duration {
+	if j.max <= j.min {
+		return j.min
+	}
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	span := int64(j.max - j.min)
+	return j.min + time.Duration(j.rng.Int64N(span+1))
+}
+
+func (j *seededJitter) Apply(ctx context.Context) error {
+	return sleep(ctx, j.draw())
+}
+
+func (*seededJitter) Kind() Kind {
+	return KindJittered
+}
+
+// Duration reports the upper bound of the jitter window (see jitteredFault).
+func (j *seededJitter) Duration() time.Duration {
+	return j.max
 }

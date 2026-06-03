@@ -16,7 +16,6 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/ag4r/chaotic/engine"
 	"github.com/ag4r/chaotic/fault"
@@ -73,14 +72,9 @@ type chaosConn struct {
 }
 
 func (c *chaosConn) Prepare(query string) (driver.Stmt, error) {
-	action, err := c.runChaos(context.Background(), query, "PREPARE")
+	s, err := c.wrapped.Prepare(query)
 	if err != nil {
-		return nil, translate(err)
-	}
-	s, perr := c.wrapped.Prepare(query)
-	reportOutcome(context.Background(), action, perr)
-	if perr != nil {
-		return nil, perr
+		return nil, err
 	}
 	return &chaosStmt{wrapped: s, eng: c.eng, query: query}, nil
 }
@@ -94,59 +88,45 @@ func (c *chaosConn) Begin() (driver.Tx, error) {
 }
 
 func (c *chaosConn) Ping(ctx context.Context) error {
-	action, err := c.runChaos(ctx, "", "PING")
-	if err != nil {
-		return translate(err)
-	}
-	var perr error
 	if p, ok := c.wrapped.(driver.Pinger); ok {
-		perr = p.Ping(ctx)
+		return p.Ping(ctx)
 	}
-	reportOutcome(ctx, action, perr)
-	return perr
+	return nil
 }
 
 func (c *chaosConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	ec, ok := c.wrapped.(driver.ExecerContext)
+	if !ok {
+		return nil, driver.ErrSkip // let the Stmt path own chaos for this op
+	}
 	action, err := c.runChaos(ctx, query, classifySQL(query))
 	if err != nil {
 		return nil, translate(err)
 	}
-	if ec, ok := c.wrapped.(driver.ExecerContext); ok {
-		res, eerr := ec.ExecContext(ctx, query, args)
-		reportOutcome(ctx, action, eerr)
-		return res, eerr
-	}
-	reportOutcome(ctx, action, nil)
-	return nil, driver.ErrSkip
+	res, eerr := ec.ExecContext(ctx, query, args)
+	reportOutcome(ctx, action, eerr)
+	return res, eerr
 }
 
 func (c *chaosConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	qc, ok := c.wrapped.(driver.QueryerContext)
+	if !ok {
+		return nil, driver.ErrSkip
+	}
 	action, err := c.runChaos(ctx, query, classifySQL(query))
 	if err != nil {
 		return nil, translate(err)
 	}
-	if qc, ok := c.wrapped.(driver.QueryerContext); ok {
-		rows, qerr := qc.QueryContext(ctx, query, args)
-		reportOutcome(ctx, action, qerr)
-		return rows, qerr
-	}
-	reportOutcome(ctx, action, nil)
-	return nil, driver.ErrSkip
+	rows, qerr := qc.QueryContext(ctx, query, args)
+	reportOutcome(ctx, action, qerr)
+	return rows, qerr
 }
 
 func (c *chaosConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
-	action, err := c.runChaos(ctx, "", "BEGIN")
-	if err != nil {
-		return nil, translate(err)
-	}
 	if btc, ok := c.wrapped.(driver.ConnBeginTx); ok {
-		tx, berr := btc.BeginTx(ctx, opts)
-		reportOutcome(ctx, action, berr)
-		return tx, berr
+		return btc.BeginTx(ctx, opts)
 	}
-	tx, berr := c.wrapped.Begin() //nolint:staticcheck // fallback when wrapped driver doesn't implement ConnBeginTx
-	reportOutcome(ctx, action, berr)
-	return tx, berr
+	return c.wrapped.Begin() //nolint:staticcheck // -
 }
 
 func (c *chaosConn) runChaos(ctx context.Context, query string, method string) (engine.Action, error) {
@@ -219,9 +199,6 @@ func (s *chaosStmt) runChaos(ctx context.Context) (engine.Action, error) {
 func translate(err error) error {
 	if errors.Is(err, fault.ErrConnDrop) {
 		return driver.ErrBadConn
-	}
-	if errors.Is(err, io.EOF) {
-		return err
 	}
 	return err
 }

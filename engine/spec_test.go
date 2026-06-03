@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -45,5 +46,43 @@ func TestBuildRuleRejectsBadDuration(t *testing.T) {
 func TestBuildRuleRejectsUnknownFault(t *testing.T) {
 	if _, err := BuildRule(RuleSpec{Faults: []FaultSpec{{Type: "explode"}}}); err == nil {
 		t.Fatal("expected error for unknown fault type")
+	}
+}
+
+func TestBuildRuleRejectsOutOfRangeProbability(t *testing.T) {
+	_, err := BuildRule(RuleSpec{
+		Counter: CounterSpec{
+			Type: "probability",
+			P:    2.0,
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for p=2.0, got nil (did it panic instead?)")
+	}
+}
+
+func TestBuildRuleRejectsTooLargeLatency(t *testing.T) {
+	_, err := BuildRule(RuleSpec{
+		Faults: []FaultSpec{{Type: "latency", Duration: "10m"}},
+	})
+	if err == nil {
+		t.Fatal("expected error for latency > maxFaultLatency, got nil")
+	}
+}
+
+func TestBuildRuleReportsAllErrors(t *testing.T) {
+	_, err := BuildRule(RuleSpec{
+		Kinds:   []string{"not_a_kind"},
+		Counter: CounterSpec{Type: "probability", P: -1},
+		Faults:  []FaultSpec{{Type: "latency", Duration: "nope"}},
+	})
+	if err == nil {
+		t.Fatal("expected aggregated error, got nil")
+	}
+	msg := err.Error()
+	for _, want := range []string{"not_a_kind", "[0,1]", "nope"} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("aggregated error missing %q; got: %v", want, msg)
+		}
 	}
 }

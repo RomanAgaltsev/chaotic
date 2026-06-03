@@ -52,20 +52,26 @@ var kindNames = map[string]Kind{
 }
 
 // BuildRule converts a RuleSpec into a Rule, validating kinds, counter type,
-// faults types, and durations. Returns an error on any invalid field.
+// fault types, durations, and probability bounds. It is total: it never panics,
+// and it aggregates every invalid field into a single errors.Join result so a
+// caller (and the operator editing config) sees all problems at once.
 func BuildRule(spec RuleSpec) (Rule, error) {
 	var opts []RuleOption
+	var errs []error
 
 	if len(spec.Kinds) > 0 {
 		kinds := make([]Kind, 0, len(spec.Kinds))
 		for _, ks := range spec.Kinds {
 			k, ok := kindNames[ks]
 			if !ok {
-				return Rule{}, fmt.Errorf("chaotic: unknown kind %q", ks)
+				errs = append(errs, fmt.Errorf("chaotic: unknown kind %q", ks))
+				continue
 			}
 			kinds = append(kinds, k)
 		}
-		opts = append(opts, MatchKind(kinds...))
+		if len(kinds) > 0 {
+			opts = append(opts, MatchKind(kinds...))
+		}
 	}
 	if spec.NameGlob != "" {
 		opts = append(opts, MatchName(spec.NameGlob))
@@ -82,21 +88,30 @@ func BuildRule(spec RuleSpec) (Rule, error) {
 	case "range":
 		opts = append(opts, Range(spec.Counter.From, spec.Counter.To))
 	case "probability":
-		opts = append(opts, Probability(spec.Counter.P, spec.Counter.Seed))
+		if spec.Counter.P < 0 || spec.Counter.P > 1 {
+			errs = append(errs, fmt.Errorf("chaotic: probability p=%v out of [0,1]", spec.Counter.P))
+		} else {
+			opts = append(opts, Probability(spec.Counter.P, spec.Counter.Seed))
+		}
 	default:
-		return Rule{}, fmt.Errorf("chaotic: unknown counter type %q", spec.Counter.Type)
+		errs = append(errs, fmt.Errorf("chaotic: unknown counter type %q", spec.Counter.Type))
 	}
 
 	faults := make([]fault.Fault, 0, len(spec.Faults))
 	for _, fs := range spec.Faults {
 		f, err := buildFault(fs)
 		if err != nil {
-			return Rule{}, err
+			errs = append(errs, err)
+			continue
 		}
 		faults = append(faults, f)
 	}
 	if len(faults) > 0 {
 		opts = append(opts, WithFaults(faults...))
+	}
+
+	if len(errs) > 0 {
+		return Rule{}, errors.Join(errs...)
 	}
 
 	r := NewRule(opts...)
@@ -106,12 +121,20 @@ func BuildRule(spec RuleSpec) (Rule, error) {
 	return r, nil
 }
 
+// maxFaultLatency caps a config-declared latency/jittered window. Config is an
+// untrusted trust boundary (hot-reloaded files, HTTP admin), so an absurd sleep
+// must be rejected. not silently honored.
+const maxFaultLatency = 5 * time.Minute
+
 func buildFault(fs FaultSpec) (fault.Fault, error) {
 	switch fs.Type {
 	case "latency":
 		d, err := time.ParseDuration(fs.Duration)
 		if err != nil {
 			return nil, fmt.Errorf("chaotic: latency duration %q: %w", fs.Duration, err)
+		}
+		if d < 0 || d > maxFaultLatency {
+			return nil, fmt.Errorf("chaotic: latency %s out of (0, %s]", d, maxFaultLatency)
 		}
 		return fault.Latency(d), nil
 	case "jittered":
@@ -122,6 +145,9 @@ func buildFault(fs FaultSpec) (fault.Fault, error) {
 		maxD, err := time.ParseDuration(fs.Max)
 		if err != nil {
 			return nil, fmt.Errorf("chaotic: jittered max %q: %w", fs.Max, err)
+		}
+		if minD < 0 || maxD > maxFaultLatency {
+			return nil, fmt.Errorf("chaotic: jittered window [%s,%s] out of (0, %s]", minD, maxD, maxFaultLatency)
 		}
 		return fault.Jittered(minD, maxD), nil
 	case "error":

@@ -39,7 +39,7 @@ func NewRuleSet(rules []Rule) RuleSet {
 }
 
 // ruleLister is an unexported fast path: Eval uses it to iterate without the
-// defensive copy that Shapshot makes. sliceRuleSet implements it.
+// defensive copy that Snapshot makes. sliceRuleSet implements it.
 type ruleLister interface {
 	rulesForEval() []Rule
 }

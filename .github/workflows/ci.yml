@@ -24,3 +24,9 @@ jobs:
             echo "== chaos_off module: $dir =="
             (cd "$dir" && go build -tags chaos_off ./... && go test -tags chaos_off -run ZeroAllocUnderChaosOff ./...)
           done
+      - name: gofmt
+        run: |
+          dirty=$(gofmt -l .)
+          if [ -n "$dirty" ]; then
+            echo "gofmt needs to run on:"; echo "$dirty"; exit 1
+          fi

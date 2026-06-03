@@ -65,3 +65,64 @@ A `go.work` file at the repo root makes the workspace resolve both modules durin
 go test ./...                 # main module
 go -C adapter/grpc test ./... # gRPC submodule
 ```
+
+## Observers
+
+Attach an `Observer` with `engine.WithObserver` to receive an event each time a
+named rule fires or is skipped:
+
+```go
+type Observer interface {
+	RuleFired(ruleName string, op Op, action Action)
+	RuleSkipped(ruleName string, op Op, reason string)
+}
+```
+
+An observer may *additionally* implement `RichObserver` to receive per-fault
+detail the base interface cannot carry. The engine type-asserts for it once, at
+construction, and calls `FaultInjected` after a fault's `Apply` returns without
+error (latency and jittered faults, plus any custom no-op fault). Faults that
+short-circuit the call — error, panic, connection drop — do **not** produce a
+`FaultEvent`.
+
+```go
+type RichObserver interface {
+	Observer
+	FaultInjected(ctx context.Context, ev FaultEvent)
+}
+
+type FaultEvent struct {
+	Rule      string
+	Op        Op
+	FaultKind fault.Kind
+	Latency   time.Duration // exact for Latency; the max bound for Jittered; 0 otherwise
+}
+```
+
+Ready-made observers live in their own submodules so the core stays
+dependency-free:
+
+- `observer/slog` — structured logs of fires and skips.
+- `observer/prometheus` — `chaotic_rule_fires_total{rule}`,
+  `chaotic_rule_skips_total{rule,reason}`, and the
+  `chaotic_fault_latency_seconds{rule}` histogram (a `RichObserver`). Label
+  values are truncated to 64 characters to bound series cardinality.
+- `observer/otel` — OpenTelemetry fire/skip counters, plus (as a `RichObserver`)
+  a `chaotic.fault_injected` event on the span active in the call's context.
+
+### `Op.Attrs` key conventions
+
+`Op.Attrs` is a `map[string]string`. Adapters populate it with stable,
+low-cardinality keys so observer labels stay consistent. Match on these with
+`engine.MatchAttr`:
+
+| Adapter        | `Op.Kind`        | `Op.Name`         | `Op.Method`        | `Op.Attrs` keys |
+|----------------|------------------|-------------------|--------------------|-----------------|
+| HTTP client    | `OpHTTPClient`   | request path      | HTTP method        | `host`          |
+| HTTP server    | `OpHTTPServer`   | request path      | HTTP method        | `remote`        |
+| SQL            | `OpSQL`          | statement class   | statement class    | `query`         |
+| gRPC client    | `OpGRPCClient`   | full method       | `unary` / `stream` | —               |
+| gRPC server    | `OpGRPCServer`   | full method       | `unary` / `stream` | —               |
+
+Keep custom attribute values low-cardinality: they become metric labels and
+unbounded values (raw SQL text, user IDs) blow up an observer's memory.

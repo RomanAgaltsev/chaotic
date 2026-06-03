@@ -268,3 +268,87 @@ func TestSQLReportsOutcomeToFailureBudget(t *testing.T) {
 		t.Fatalf("rule fired despite over-budget: Hits %d -> %d", hits, eng.Hits("slow"))
 	}
 }
+
+func TestSQLPreparedStatementInjectsOnce(t *testing.T) {
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpSQL),
+		engine.WithFault(fault.Error(errors.New("boom"))),
+	).Named("x"))
+	chaossql.Register("chaos:exec-only", "chaosfake", eng)
+	db, err := sql.Open("chaos:exec-only", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+
+	stmt, err := db.Prepare("SELECT 1")
+	if err != nil {
+		t.Fatalf("Prepare should not inject chaos, got %v", err)
+	}
+	if got := eng.Hits("x"); got != 0 {
+		t.Fatalf("Prepare fired chaos: Hits = %d, want 0", got)
+	}
+	_, _ = stmt.Exec()
+	if got := eng.Hits("x"); got != 1 {
+		t.Fatalf("prepared Exec fired %d times, want exactly 1 (no double-injection)", got)
+	}
+}
+
+func TestSQLPingAndBeginPassThrough(t *testing.T) {
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpSQL),
+		engine.WithFault(fault.Error(errors.New("boom"))),
+	).Named("x"))
+	chaossql.Register("chaos:passthrough", "chaosfake", eng)
+	db, _ := sql.Open("chaos:passthrough", "")
+	defer func() { _ = db.Close() }()
+	_ = db.Ping()
+	if tx, err := db.Begin(); err == nil {
+		_ = tx.Rollback()
+	}
+	if got := eng.Hits("x"); got != 0 {
+		t.Fatalf("Ping/Begin fired chaos: Hits = %d, want 0", got)
+	}
+}
+
+type prepareOnlyDriver struct{}
+
+func (prepareOnlyDriver) Open(string) (dbdrv.Conn, error) {
+	return &prepareOnlyConn{}, nil
+}
+
+// prepareOnlyConn satisfies driver.Conn but NOT ExecerContext/QueryerContext,
+// forcing database/sql through the Prepare+Stmt fallback.
+type prepareOnlyConn struct{}
+
+func (c *prepareOnlyConn) Prepare(q string) (dbdrv.Stmt, error) {
+	return &fakeStmt{q: q}, nil
+}
+
+func (c *prepareOnlyConn) Close() error {
+	return nil
+}
+
+func (c *prepareOnlyConn) Begin() (dbdrv.Tx, error) {
+	return &fakeTx{}, nil
+}
+
+func TestExecContextConsumesChaosOnceWithoutExecer(t *testing.T) {
+	sql.Register("prepare-only", &prepareOnlyDriver{})
+	e := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpSQL),
+		engine.WithFault(fault.Latency(0)),
+	).Named("x"))
+	chaossql.Register("chaos:prepare-only", "prepare-only", e)
+	db, err := sql.Open("chaos:prepare-only", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+	if _, err := db.ExecContext(context.Background(), "INSERT INTO t VALUES (1)"); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.Hits("x"); got != 1 {
+		t.Fatalf("rule fired %d times, want 1 (double-injection on ErrSkip fallback)", got)
+	}
+}

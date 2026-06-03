@@ -101,3 +101,38 @@ func TestConnDropReturnsSentinel(t *testing.T) {
 		t.Fatalf("Apply returned %v, want errors.Is(ErrConnDrop) == true", err)
 	}
 }
+
+func TestJitteredSeedIsReproducible(t *testing.T) {
+	min, max := 10*time.Millisecond, 100*time.Millisecond
+	// Two faults with the same seed must choose identical durations. Assert via
+	// elapsed time being equal across paired runs (or expose a test seam).
+	a := JitteredSeed(min, max, 42)
+	b := JitteredSeed(min, max, 42)
+	for range 5 {
+		ta := timeApply(t, a)
+		tb := timeApply(t, b)
+		// Same seed, same call index -> same draw. timeApply reads the intended
+		// draw through a seam, so equality is exact (no scheduler slop).
+		if ta != tb {
+			t.Fatalf("draw mismatch: a=%v b=%v", ta, tb)
+		}
+		if ta < min || ta > max {
+			t.Fatalf("draw %v out of range [%v, %v]", ta, min, max)
+		}
+	}
+}
+
+// timeApply returns the duration f would sleep for. For seeded jitter it reads
+// the intended draw through the seam (deterministic, no flakiness); for any
+// other fault it measures the wall-clock time Apply spends.
+func timeApply(t *testing.T, f Fault) time.Duration {
+	t.Helper()
+	if sj, ok := f.(*seededJitter); ok {
+		return sj.draw()
+	}
+	start := time.Now()
+	if err := f.Apply(context.Background()); err != nil {
+		t.Fatalf("Apply returned %v, want nil", err)
+	}
+	return time.Since(start)
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/ag4r/chaotic/fault"
 )
@@ -14,13 +15,14 @@ type Option func(*Engine)
 // Engine holds the rules and decision logic. Engines are not safe to copy -
 // always pass as *Engine. AddRule is safe for concurrent use, Eval is too.
 type Engine struct {
-	rules       atomic.Pointer[ruleSetHolder]
-	observer    Observer
-	killswitch  KillSwitch
-	budget      *failureBudget
-	rateLimiter *tokenBucket
-	maxConc     *semaphore
-	guard       func() bool
+	rules        atomic.Pointer[ruleSetHolder]
+	observer     Observer
+	richObserver RichObserver
+	killswitch   KillSwitch
+	budget       *failureBudget
+	rateLimiter  *tokenBucket
+	maxConc      *semaphore
+	guard        func() bool
 
 	mu       sync.Mutex               // guards AddRule and hits map mutations
 	hits     map[string]*atomic.Int64 // per-named-rule counters
@@ -28,7 +30,7 @@ type Engine struct {
 }
 
 // New constructs an engine with no rules.
-// Options may inject an Observer, a KillSwitch, or other.
+// Options may inject an Observer or a KillSwitch.
 func New(opts ...Option) *Engine {
 	e := &Engine{
 		hits: make(map[string]*atomic.Int64),
@@ -133,7 +135,7 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 		return Pass
 	}
 	if e.killswitch != nil && e.killswitch(ctx, op) {
-		return Pass
+		return e.passOrTrack(op)
 	}
 	h := e.rules.Load()
 	for _, r := range rulesFor(h) {
@@ -162,7 +164,7 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 			release = rel
 		}
 		e.recordHit(r.name)
-		act := &ruleAction{faults: r.faults, eng: e, op: op, release: release}
+		act := &ruleAction{faults: r.faults, eng: e, op: op, release: release, name: r.name}
 		if e.observer != nil && r.name != "" {
 			e.observer.RuleFired(r.name, op, act)
 		}
@@ -174,13 +176,12 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 // passOrTrack returns the bare Pass singleton unless a failure budget is
 // configured, in which case it returns an outcome-tracking action so every
 // call's outcome is recorded.
-func (e *Engine) passOrTrack(op Op) Action {
+func (e *Engine) passOrTrack(_ Op) Action {
 	if e.budget == nil {
 		return Pass
 	}
 	return &trackingAction{
 		eng: e,
-		op:  op,
 	}
 }
 
@@ -202,7 +203,7 @@ func (e *Engine) recordHit(name string) {
 	}
 }
 
-// recordOutcome feeds the wrapped call's result ti the failure budget, if any.
+// recordOutcome feeds the wrapped call's result to the failure budget, if any.
 func (e *Engine) recordOutcome(callErr error) {
 	if e.budget != nil {
 		e.budget.record(callErr)
@@ -215,6 +216,7 @@ type ruleAction struct {
 	faults      []fault.Fault
 	eng         *Engine
 	op          Op
+	name        string
 	release     func()
 	releaseOnce sync.Once
 }
@@ -225,8 +227,27 @@ func (a *ruleAction) Before(ctx context.Context) error {
 			a.doRelease()
 			return err
 		}
+		a.notifyInjected(ctx, f)
 	}
 	return nil
+}
+
+// notifyInjected emits a FaultEvent to the engine's RichObserver, if any, after
+// a fault's Apply has run without error. Latency is read from the fault when it
+// exposes a Duration method (latency/jittered faults); other faults report 0.
+func (a *ruleAction) notifyInjected(ctx context.Context, f fault.Fault) {
+	if a.eng == nil || a.eng.richObserver == nil {
+		return
+	}
+	ev := FaultEvent{
+		Rule:      a.name,
+		Op:        a.op,
+		FaultKind: fault.KindOf(f),
+	}
+	if d, ok := f.(interface{ Duration() time.Duration }); ok {
+		ev.Latency = d.Duration()
+	}
+	a.eng.richObserver.FaultInjected(ctx, ev)
 }
 
 func (a *ruleAction) After(_ context.Context) error {
@@ -250,7 +271,6 @@ func (a *ruleAction) doRelease() {
 // call's outcome into the failure budget on non-firing paths.
 type trackingAction struct {
 	eng *Engine
-	op  Op
 }
 
 func (a *trackingAction) Before(_ context.Context) error {
