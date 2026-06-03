@@ -32,12 +32,11 @@ func UnaryClientInterceptor(eng *engine.Engine) grpc.UnaryClientInterceptor {
 		}
 		action := eng.Eval(ctx, op)
 		if err := action.Before(ctx); err != nil {
+			reportOutcome(ctx, action, err) // injected fault counts toward the budget
 			return toStatus(err)
 		}
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		if o, ok := action.(engine.OutcomeReporter); ok {
-			o.Outcome(ctx, err)
-		}
+		reportOutcome(ctx, action, err)
 		return err
 	}
 }
@@ -56,13 +55,20 @@ func UnaryServerInterceptor(eng *engine.Engine) grpc.UnaryServerInterceptor {
 		}
 		action := eng.Eval(ctx, op)
 		if err := action.Before(ctx); err != nil {
+			reportOutcome(ctx, action, err) // injected fault counts toward the budget
 			return nil, toStatus(err)
 		}
 		resp, herr := handler(ctx, req)
-		if o, ok := action.(engine.OutcomeReporter); ok {
-			o.Outcome(ctx, herr)
-		}
+		reportOutcome(ctx, action, herr)
 		return resp, herr
+	}
+}
+
+// reportOutcome forwards the call's error (or the injected fault) to the engine
+// if the action supports outcome reporting.
+func reportOutcome(ctx context.Context, action engine.Action, callErr error) {
+	if o, ok := action.(engine.OutcomeReporter); ok {
+		o.Outcome(ctx, callErr)
 	}
 }
 

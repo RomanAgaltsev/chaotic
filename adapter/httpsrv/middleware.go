@@ -5,6 +5,7 @@
 package httpsrv
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -33,6 +34,11 @@ func Middleware(eng *engine.Engine) func(http.Handler) http.Handler {
 			}
 			action := eng.Eval(ctx, op)
 			if err := action.Before(ctx); err != nil {
+				// The injected fault aborted the request. Report it as the
+				// outcome so the failure budget counts injected errors, then
+				// run After to release any held bound.
+				reportOutcome(ctx, action, err)
+				_ = action.After(ctx)
 				handleErr(w, err)
 				return
 			}
@@ -42,11 +48,17 @@ func Middleware(eng *engine.Engine) func(http.Handler) http.Handler {
 			if rec.status >= 500 {
 				callErr = fmt.Errorf("chaotic: server responded %d", rec.status)
 			}
-			if o, ok := action.(engine.OutcomeReporter); ok {
-				o.Outcome(ctx, callErr)
-			}
+			reportOutcome(ctx, action, callErr)
 			_ = action.After(ctx)
 		})
+	}
+}
+
+// reportOutcome forwards the call's error (or the injected fault) to the engine
+// if the action supports outcome reporting.
+func reportOutcome(ctx context.Context, action engine.Action, callErr error) {
+	if o, ok := action.(engine.OutcomeReporter); ok {
+		o.Outcome(ctx, callErr)
 	}
 }
 

@@ -3,6 +3,7 @@ go 1.26
 use (
 	.
 	./adapter/grpc
+	./examples/grpc-stream-reconnect
 	./observer/otel
 	./observer/prometheus
 	./observer/slog

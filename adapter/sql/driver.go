@@ -101,6 +101,7 @@ func (c *chaosConn) ExecContext(ctx context.Context, query string, args []driver
 	}
 	action, err := c.runChaos(ctx, query, classifySQL(query))
 	if err != nil {
+		reportOutcome(ctx, action, err) // injected fault counts toward the budget
 		return nil, translate(err)
 	}
 	res, eerr := ec.ExecContext(ctx, query, args)
@@ -115,6 +116,7 @@ func (c *chaosConn) QueryContext(ctx context.Context, query string, args []drive
 	}
 	action, err := c.runChaos(ctx, query, classifySQL(query))
 	if err != nil {
+		reportOutcome(ctx, action, err) // injected fault counts toward the budget
 		return nil, translate(err)
 	}
 	rows, qerr := qc.QueryContext(ctx, query, args)
@@ -163,6 +165,7 @@ func (s *chaosStmt) NumInput() int {
 func (s *chaosStmt) Exec(args []driver.Value) (driver.Result, error) {
 	action, err := s.runChaos(context.Background())
 	if err != nil {
+		reportOutcome(context.Background(), action, err) // injected fault counts toward the budget
 		return nil, translate(err)
 	}
 	res, eerr := s.wrapped.Exec(args) //nolint:staticcheck // required by driver.Stmt interface; delegates to wrapped stmt
@@ -173,6 +176,7 @@ func (s *chaosStmt) Exec(args []driver.Value) (driver.Result, error) {
 func (s *chaosStmt) Query(args []driver.Value) (driver.Rows, error) {
 	action, err := s.runChaos(context.Background())
 	if err != nil {
+		reportOutcome(context.Background(), action, err) // injected fault counts toward the budget
 		return nil, translate(err)
 	}
 	rows, qerr := s.wrapped.Query(args) //nolint:staticcheck // required by driver.Stmt interface; delegates to wrapped stmt

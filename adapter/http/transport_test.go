@@ -152,6 +152,40 @@ func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return f(r)
 }
 
+func TestTransportReportsInjectedErrorToFailureBudget(t *testing.T) {
+	// An always-fire error fault aborts the call in Before. The injected error
+	// must still feed the failure budget, or the budget can never bound a rule
+	// that injects errors. healthy downstream so only injected faults count.
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	defer srv.Close()
+
+	eng := engine.New(engine.WithFailureBudget(0.5, 2)).
+		AddRule(engine.NewRule(
+			engine.MatchKind(engine.OpHTTPClient),
+			engine.WithFault(fault.Error(errors.New("injected"))),
+		).Named("boom"))
+	t.Cleanup(eng.Reset)
+	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, eng)}
+
+	for range 2 { // fill window at 100% injected errors
+		resp, err := client.Get(srv.URL)
+		if err == nil {
+			_ = resp.Body.Close()
+		}
+	}
+	if hits := eng.Hits("boom"); hits != 2 {
+		t.Fatalf("Hits before tripping = %d, want 2", hits)
+	}
+	// Budget now full at 100% >= 50% -> next call must not fire.
+	resp, err := client.Get(srv.URL)
+	if err == nil {
+		_ = resp.Body.Close()
+	}
+	if hits := eng.Hits("boom"); hits != 2 {
+		t.Fatalf("rule fired despite over-budget: Hits = %d, want still 2", hits)
+	}
+}
+
 func TestTransportReportsOutcomeToFailureBudget(t *testing.T) {
 	failing := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		return nil, errors.New("downstream down")
