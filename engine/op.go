@@ -16,6 +16,7 @@ const (
 	OpSQL
 	OpGRPCClient
 	OpGRPCServer
+	OpExplicit // chaos.Point call sites
 )
 
 // Op describes a single intercepted call. Adapters construct an Op only after

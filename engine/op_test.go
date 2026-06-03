@@ -24,3 +24,19 @@ func TestKindsAreDistinct(t *testing.T) {
 		seen[k] = true
 	}
 }
+
+func TestOpExplicitIsSixthKind(t *testing.T) {
+	if OpExplicit != OpGRPCServer+1 {
+		t.Fatalf("OpExplicit = %d, want %d (appended after OpGRPCServer)", OpExplicit, OpGRPCServer+1)
+	}
+}
+
+func TestBuildRuleAcceptsExplicitKind(t *testing.T) {
+	r, err := BuildRule(RuleSpec{Kinds: []string{"explicit"}})
+	if err != nil {
+		t.Fatalf("BuildRule with explicit kind: %v", err)
+	}
+	if !r.matches(context.Background(), Op{Kind: OpExplicit, Name: "p"}) {
+		t.Fatal("rule did not match an OpExplicit op")
+	}
+}

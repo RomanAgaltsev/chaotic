@@ -49,6 +49,7 @@ var kindNames = map[string]Kind{
 	"sql":         OpSQL,
 	"grpc_client": OpGRPCClient,
 	"grpc_server": OpGRPCServer,
+	"explicit":    OpExplicit,
 }
 
 // BuildRule converts a RuleSpec into a Rule, validating kinds, counter type,
