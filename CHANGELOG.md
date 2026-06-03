@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/ag4r/chaotic/compare/v1.3.0...v1.4.0) (2026-06-03)
+
+
+### Features
+
+* hardening and ergonomics ([#15](https://github.com/ag4r/chaotic/issues/15)) ([f27f06c](https://github.com/ag4r/chaotic/commit/f27f06c9fd9482ee2ef144d85e8a86d6f9c3044f))
+
 ## [1.3.0](https://github.com/ag4r/chaotic/compare/v1.2.0...v1.3.0) (2026-06-02)
 
 
