@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 package sql_test
 
 import (

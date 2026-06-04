@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 package httpsrv_test
 
 import (
@@ -42,4 +44,23 @@ func ExampleMiddleware() {
 	// Output:
 	// request 1 status: 500
 	// request 2 status: 200
+}
+
+func ExampleMiddleware_httpStatus() {
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpHTTPServer),
+		engine.WithFault(fault.HTTPStatus(503, "overloaded")),
+	).Named("degrade"))
+
+	h := httpsrv.Middleware(eng)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintln(w, "handler ran")
+	}))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	resp, _ := http.Get(srv.URL + "/")
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	fmt.Print(resp.StatusCode, " ", string(body))
+	// Output: 503 overloaded
 }

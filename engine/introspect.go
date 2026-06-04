@@ -11,6 +11,7 @@ const (
 	CounterTimes
 	CounterRange
 	CounterProbability
+	CounterSequence
 )
 
 // RuleInfo is a read-only view of a Rule for linting and tooling. It exposes
@@ -47,6 +48,8 @@ func counterKindOf(c counter) CounterKind {
 		return CounterRange
 	case *probCounter:
 		return CounterProbability
+	case *sequenceCounter:
+		return CounterSequence
 	}
 	return CounterAlways
 }

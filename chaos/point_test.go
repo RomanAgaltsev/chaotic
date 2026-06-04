@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 package chaos_test
 
 import (

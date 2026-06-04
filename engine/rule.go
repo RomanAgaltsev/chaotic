@@ -175,6 +175,30 @@ func (p *probCounter) shouldFire() bool {
 	return p.rng.Float64() < p.p
 }
 
+// Sequence fires on the evaluations whose index is true in fire, in order, and
+// skips the rest. After the slice is exhausted it never fires again. it is the
+// deterministic counter chaostest/golden uses to replay a recorded fire
+// pattern, and is useful generally for "fire on exactly these matches".
+func Sequence(fire []bool) RuleOption {
+	mask := append([]bool(nil), fire...)
+	return func(r *Rule) {
+		r.counter = &sequenceCounter{fire: mask}
+	}
+}
+
+type sequenceCounter struct {
+	fire []bool
+	cur  atomic.Int64
+}
+
+func (s *sequenceCounter) shouldFire() bool {
+	i := s.cur.Add(1) - 1
+	if i < 0 || int(i) >= len(s.fire) {
+		return false
+	}
+	return s.fire[i]
+}
+
 // WithFault attaches a single fault. Equivalent to WithFaults(f).
 func WithFault(f fault.Fault) RuleOption {
 	return func(r *Rule) {

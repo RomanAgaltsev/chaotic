@@ -1,8 +1,11 @@
+//go:build !chaos_off
+
 package http_test
 
 import (
 	"context"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -146,12 +149,6 @@ func TestOpAttrsIncludeHost(t *testing.T) {
 	}
 }
 
-type roundTripperFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return f(r)
-}
-
 func TestTransportReportsInjectedErrorToFailureBudget(t *testing.T) {
 	// An always-fire error fault aborts the call in Before. The injected error
 	// must still feed the failure budget, or the budget can never bound a rule
@@ -211,5 +208,81 @@ func TestTransportReportsOutcomeToFailureBudget(t *testing.T) {
 	_, _ = client.Do(req) //nolint:bodyclose // test
 	if eng.Hits("slow") != hits {
 		t.Fatalf("rule fired despite over-budget: Hits %d -> %d", hits, eng.Hits("slow"))
+	}
+}
+
+func TestHTTPStatusFaultSynthesizesResponse(t *testing.T) {
+	// Upstream would 204; the fault must override with a synthesized 503 and
+	// NOT return a transport error, so client code sees a real response.
+	upstreamHit := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upstreamHit = true
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+	e := newEngine(t, engine.NewRule(
+		engine.MatchKind(engine.OpHTTPClient),
+		engine.WithFault(fault.HTTPStatus(503, "down")),
+	))
+	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, e)}
+	resp, err := client.Get(srv.URL + "/x")
+	if err != nil {
+		t.Fatalf("unexpected transport error: %v", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want 503", resp.StatusCode)
+	}
+	if string(body) != "down" {
+		t.Fatalf("body = %q, want %q", string(body), "down")
+	}
+	if upstreamHit {
+		t.Fatal("upstream was contacted; fault should have short-circuited the send")
+	}
+}
+
+func TestHeaderInjectFaultMutatesResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	e := newEngine(t, engine.NewRule(
+		engine.MatchKind(engine.OpHTTPClient),
+		engine.WithFault(fault.HeaderInject("Content-Length", "999999")),
+	))
+	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, e)}
+	resp, err := client.Get(srv.URL + "/x")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (header fault must not abort)", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Content-Length"); got != "999999" {
+		t.Fatalf("response Content-Length = %q, want injected 999999", got)
+	}
+}
+
+func TestHeaderStripFaultMutatesResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Trace-Id", "present")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	e := newEngine(t, engine.NewRule(
+		engine.MatchKind(engine.OpHTTPClient),
+		engine.WithFault(fault.HeaderStrip("X-Trace-Id")),
+	))
+	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, e)}
+	resp, err := client.Get(srv.URL + "/x")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if got := resp.Header.Get("X-Trace-Id"); got != "" {
+		t.Fatalf("response X-Trace-Id = %q, want stripped", got)
 	}
 }

@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 package http_test
 
 import (
@@ -42,4 +44,27 @@ func ExampleWrapTransport() {
 	// Output:
 	// attempt 1 failed: true
 	// attempt 2 status: 200
+}
+
+func ExampleWrapTransport_httpStatus() {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpHTTPClient),
+		engine.WithFault(fault.HTTPStatus(503)),
+	).Named("degrade"))
+	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, eng)}
+
+	// The client sees a real 503 response (not a transport error) to test
+	// retry/handling code.
+	resp, err := client.Get(srv.URL + "/")
+	fmt.Println("err:", err)
+	fmt.Println("status:", resp.StatusCode)
+	_ = resp.Body.Close()
+	// Output:
+	// err: <nil>
+	// status: 503
 }

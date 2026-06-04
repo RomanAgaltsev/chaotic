@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 package sql_test
 
 import (
@@ -116,39 +118,8 @@ func (t *fakeTx) Rollback() error {
 	return nil
 }
 
-// --- failing driver shim: QueryContext always errors ---
-// Used by TestSQLReportsOutcomeToFailureBudget so the wrapped call's outcome
-// is a non-nil error, letting the failure budget fill with errors and trip.
-
-type failingDriver struct{}
-
-func (failingDriver) Open(name string) (dbdrv.Conn, error) {
-	return &failingConn{}, nil
-}
-
-type failingConn struct{}
-
-// Prepare/Close/Begin satisfy driver.Conn
-func (c *failingConn) Prepare(query string) (dbdrv.Stmt, error) {
-	return nil, errors.New("db down")
-}
-
-func (c *failingConn) Begin() (dbdrv.Tx, error) {
-	return nil, errors.New("db down")
-}
-
-func (c *failingConn) Close() error {
-	return nil
-}
-
-// QueryContext satisfies driver.QueryerContext and always errors.
-func (c *failingConn) QueryContext(_ context.Context, _ string, _ []dbdrv.NamedValue) (dbdrv.Rows, error) {
-	return nil, errors.New("db down")
-}
-
 func init() {
 	sql.Register("chaosfake", &fakeDriver{})
-	sql.Register("failing-shim", &failingDriver{})
 }
 
 func registerChaos(t *testing.T, name string, e *engine.Engine) {

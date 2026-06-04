@@ -9,9 +9,13 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/ag4r/chaotic/engine"
@@ -50,6 +54,29 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	action := t.eng.Eval(ctx, op)
 	if err := action.Before(ctx); err != nil {
+		var hse *fault.HTTPStatusError
+		if errors.As(err, &hse) {
+			resp := synthResponse(req, hse)
+			var callErr error
+			if hse.Code >= 500 {
+				callErr = fmt.Errorf("chaotic: synthesized %d", hse.Code)
+			}
+			reportOutcome(ctx, action, callErr)
+			_ = action.After(ctx)
+			return resp, nil
+		}
+		var hf *fault.HeaderFault
+		if errors.As(err, &hf) {
+			// A header fault mutates the response the caller reads, then the
+			// real call proceeds normally.
+			resp, rerr := t.wrapped.RoundTrip(req)
+			if resp != nil {
+				applyHeaderFault(resp.Header, hf)
+			}
+			reportOutcome(ctx, action, rerr)
+			_ = action.After(ctx)
+			return resp, rerr
+		}
 		// The injected fault aborted the call. Report it as the outcome so the
 		// failure budget counts injected errors, then run After to release any
 		// held bound (e.g. the max-concurrent slot).
@@ -84,4 +111,34 @@ func translateError(u *url.URL, err error) error {
 		URL: u.String(),
 		Err: err,
 	}
+}
+
+// synthResponse builds a real *http.Response carrying the fault's status, so
+// client retry/handling code can be exercised against e.g. a 503 instead of a
+// transport error. Body defaults to http.StatusText(code).
+func synthResponse(req *http.Request, hse *fault.HTTPStatusError) *http.Response {
+	body := hse.Body
+	if body == "" {
+		body = http.StatusText(hse.Code)
+	}
+	return &http.Response{
+		StatusCode:    hse.Code,
+		Status:        strconv.Itoa(hse.Code) + " " + http.StatusText(hse.Code),
+		Proto:         "HTTP/1.1",
+		ProtoMajor:    1,
+		ProtoMinor:    1,
+		Header:        make(http.Header),
+		Body:          io.NopCloser(strings.NewReader(body)),
+		ContentLength: int64(len(body)),
+		Request:       req,
+	}
+}
+
+// applyHeaderFault mutates h per the header fault: delete on strip, set otherwise.
+func applyHeaderFault(h http.Header, hf *fault.HeaderFault) {
+	if hf.Strip {
+		h.Del(hf.Key)
+		return
+	}
+	h.Set(hf.Key, hf.Value)
 }

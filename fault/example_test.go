@@ -50,3 +50,22 @@ func ExampleJitteredSeed() {
 	f := fault.JitteredSeed(10*time.Millisecond, 50*time.Millisecond, 42)
 	_ = f.Apply(context.Background())
 }
+
+func ExampleHTTPStatus() {
+	// HTTPStatus carries a status code on a sentinel the HTTP adapters render.
+	err := fault.HTTPStatus(503, "overloaded").Apply(context.Background())
+	var hse *fault.HTTPStatusError
+	errors.As(err, &hse)
+	fmt.Println(hse.StatusCode(), hse.Body)
+	// Output: 503 overloaded
+}
+
+func ExampleHeaderStrip() {
+	// HeaderStrip yields a sentinel describing a header deletion; the adapters
+	// apply it to the headers flowing toward the code under test.
+	err := fault.HeaderStrip("X-Trace-Id").Apply(context.Background())
+	var hf *fault.HeaderFault
+	errors.As(err, &hf)
+	fmt.Println(hf.Strip, hf.Key)
+	// Output: true X-Trace-Id
+}

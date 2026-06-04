@@ -53,6 +53,7 @@ func TestRuleInfoCounterKind(t *testing.T) {
 		{"times", Times(3), CounterTimes},
 		{"range", Range(1, 2), CounterRange},
 		{"probability", Probability(0.5, 1), CounterProbability},
+		{"sequence", Sequence([]bool{true}), CounterSequence},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

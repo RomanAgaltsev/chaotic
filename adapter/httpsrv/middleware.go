@@ -34,13 +34,19 @@ func Middleware(eng *engine.Engine) func(http.Handler) http.Handler {
 			}
 			action := eng.Eval(ctx, op)
 			if err := action.Before(ctx); err != nil {
-				// The injected fault aborted the request. Report it as the
-				// outcome so the failure budget counts injected errors, then
-				// run After to release any held bound.
-				reportOutcome(ctx, action, err)
-				_ = action.After(ctx)
-				handleErr(w, err)
-				return
+				var hf *fault.HeaderFault
+				if !errors.As(err, &hf) {
+					// A short-circuiting fault (error, conn drop, HTTP status)
+					// aborted the request. Report the outcome, release the bound,
+					// and render the error.
+					reportOutcome(ctx, action, err)
+					_ = action.After(ctx)
+					handleErr(w, err)
+					return
+				}
+				// A header fault mutates the request the handler sees, then the
+				// request proceeds normally.
+				applyHeaderFault(r.Header, hf)
 			}
 			rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 			next.ServeHTTP(rec, r)
@@ -63,6 +69,15 @@ func reportOutcome(ctx context.Context, action engine.Action, callErr error) {
 }
 
 func handleErr(w http.ResponseWriter, err error) {
+	var hse *fault.HTTPStatusError
+	if errors.As(err, &hse) {
+		body := hse.Body
+		if body == "" {
+			body = http.StatusText(hse.Code)
+		}
+		http.Error(w, body, hse.Code)
+		return
+	}
 	if errors.Is(err, fault.ErrConnDrop) {
 		hj, ok := w.(http.Hijacker)
 		if !ok {
@@ -78,6 +93,15 @@ func handleErr(w http.ResponseWriter, err error) {
 		return
 	}
 	http.Error(w, err.Error(), http.StatusInternalServerError)
+}
+
+// applyHeaderFault mutates h per the header fault: delete on strip, set otherwise.
+func applyHeaderFault(h http.Header, hf *fault.HeaderFault) {
+	if hf.Strip {
+		h.Del(hf.Key)
+		return
+	}
+	h.Set(hf.Key, hf.Value)
 }
 
 // statusRecorder captures the response status for outcome reporting. It exposes

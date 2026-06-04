@@ -12,6 +12,8 @@ const (
 	KindError
 	KindPanic
 	KindConnDrop
+	KindHTTPStatus
+	KindHeader
 )
 
 // Kinded is implemented by every built-in fault so tools can classify it

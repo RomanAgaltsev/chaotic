@@ -1,3 +1,5 @@
+//go:build !chaos_off
+
 package httpsrv_test
 
 import (
@@ -144,5 +146,108 @@ func TestMiddlewareReportsServerErrorToBudget(t *testing.T) {
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/y", nil))
 	if eng.Hits("slow") != hits {
 		t.Fatalf("rule fired despite over-budget: Hits %d -> %d", hits, eng.Hits("slow"))
+	}
+}
+
+func TestHTTPStatusFaultRendersStatus(t *testing.T) {
+	e := newEngine(t, engine.NewRule(
+		engine.MatchKind(engine.OpHTTPServer),
+		engine.WithFault(fault.HTTPStatus(503, "overloaded")),
+	))
+	called := false
+	h := httpsrv.Middleware(e)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+	}))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	resp, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want 503", resp.StatusCode)
+	}
+	if string(body) != "overloaded\n" { // http.Error appends a newline
+		t.Fatalf("body = %q, want %q", string(body), "overloaded\n")
+	}
+	if called {
+		t.Fatal("handler ran despite an injected status fault")
+	}
+}
+
+func TestHTTPStatusFaultDefaultBody(t *testing.T) {
+	e := newEngine(t, engine.NewRule(
+		engine.MatchKind(engine.OpHTTPServer),
+		engine.WithFault(fault.HTTPStatus(429)),
+	))
+	h := httpsrv.Middleware(e)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	resp, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, want 429", resp.StatusCode)
+	}
+	if string(body) != http.StatusText(http.StatusTooManyRequests)+"\n" {
+		t.Fatalf("body = %q, want default status text", string(body))
+	}
+}
+
+func TestHeaderStripFaultMutatesRequestAndContinues(t *testing.T) {
+	e := newEngine(t, engine.NewRule(
+		engine.MatchKind(engine.OpHTTPServer),
+		engine.WithFault(fault.HeaderStrip("X-Trace-Id")),
+	))
+	var seen string
+	called := false
+	h := httpsrv.Middleware(e)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		seen = r.Header.Get("X-Trace-Id")
+		w.WriteHeader(http.StatusOK)
+	}))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/", nil)
+	req.Header.Set("X-Trace-Id", "present")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if !called {
+		t.Fatal("handler did not run; header fault must continue, not abort")
+	}
+	if seen != "" {
+		t.Fatalf("handler saw X-Trace-Id = %q, want it stripped", seen)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+}
+
+func TestHeaderInjectFaultMutatesRequest(t *testing.T) {
+	e := newEngine(t, engine.NewRule(
+		engine.MatchKind(engine.OpHTTPServer),
+		engine.WithFault(fault.HeaderInject("X-Injected", "yes")),
+	))
+	var seen string
+	h := httpsrv.Middleware(e)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = r.Header.Get("X-Injected")
+	}))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	resp, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if seen != "yes" {
+		t.Fatalf("handler saw X-Injected = %q, want %q", seen, "yes")
 	}
 }
