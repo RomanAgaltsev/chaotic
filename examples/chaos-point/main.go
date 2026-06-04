@@ -1,4 +1,4 @@
-// Package chaos-point demonstrates an explicit injection point guarding a
+// Command chaos-point demonstrates an explicit injection point guarding a
 // post-commit hook. Run with `go run .` to see the retry succeed despite an
 // injected transient failure on the first attempt.
 package main
@@ -16,7 +16,7 @@ import (
 // publish does real work, with an explicit chaos point at the spot a flaky
 // downstream would fail. No adapter wraps this. The point is the boundary.
 func publish(ctx context.Context, id string) error {
-	if err := chaos.Point(ctx, "publish.afterCommit"); err != nil {
+	if err := chaos.PointWith(ctx, "publish.afterCommit", map[string]string{"id": id}); err != nil {
 		return err
 	}
 	return nil

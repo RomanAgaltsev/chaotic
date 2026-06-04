@@ -36,3 +36,22 @@ func TestMaxConcurrentReleasesOnBeforeShortCircuit(t *testing.T) {
 		t.Fatalf("Hits = %d, want 2 (slot released after Before short-circuit)", got)
 	}
 }
+
+func TestMaxConcurrentReleasesOnBeforePanic(t *testing.T) {
+	e := New(WithMaxConcurrent(1)).
+		AddRule(NewRule(MatchKind(OpHTTPClient), WithFault(fault.Panic("boom"))).Named("r"))
+	ctx := context.Background()
+	a1 := e.Eval(ctx, Op{Kind: OpHTTPClient})
+	func() {
+		defer func() {
+			if r := recover(); r != "boom" {
+				t.Fatalf("recover = %v, want boom (panic must propagate)", r)
+			}
+		}()
+		_ = a1.Before(ctx) // panic fault unwinds -> must still release the slot
+	}()
+	e.Eval(ctx, Op{Kind: OpHTTPClient})
+	if got := e.Hits("r"); got != 2 {
+		t.Fatalf("Hits = %d, want 2 (slot released after Before panic)", got)
+	}
+}

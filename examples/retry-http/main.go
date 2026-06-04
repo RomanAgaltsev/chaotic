@@ -1,4 +1,4 @@
-// Package retry-http demonstrates a retry loop recovering from a transient
+// Command retry-http demonstrates a retry loop recovering from a transient
 // fault injected into an http.Client's transport. Run with `go run .`.
 package main
 
@@ -32,7 +32,7 @@ func newServer() *httptest.Server {
 // getWithRetry retries the GET up to attempts times.
 func getWithRetry(client *http.Client, url string, attempts int) (*http.Response, error) {
 	var err error
-	for i := 0; i < attempts; i++ {
+	for range attempts {
 		var resp *http.Response
 		if resp, err = client.Get(url); err == nil {
 			return resp, nil

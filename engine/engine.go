@@ -135,7 +135,7 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 		return Pass
 	}
 	if e.killswitch != nil && e.killswitch(ctx, op) {
-		return e.passOrTrack(op)
+		return e.passOrTrack()
 	}
 	h := e.rules.Load()
 	for _, r := range rulesFor(h) {
@@ -148,18 +148,18 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 		}
 		if e.budget != nil && e.budget.overBudget() {
 			e.notifySkip(r.name, op, ReasonFailureBudget)
-			return e.passOrTrack(op)
+			return e.passOrTrack()
 		}
 		if e.rateLimiter != nil && !e.rateLimiter.allow() {
 			e.notifySkip(r.name, op, ReasonRateLimit)
-			return e.passOrTrack(op)
+			return e.passOrTrack()
 		}
 		var release func()
 		if e.maxConc != nil {
 			rel, ok := e.maxConc.tryAcquire()
 			if !ok {
 				e.notifySkip(r.name, op, ReasonMaxConcurrent)
-				return e.passOrTrack(op)
+				return e.passOrTrack()
 			}
 			release = rel
 		}
@@ -170,13 +170,13 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 		}
 		return act
 	}
-	return e.passOrTrack(op)
+	return e.passOrTrack()
 }
 
 // passOrTrack returns the bare Pass singleton unless a failure budget is
 // configured, in which case it returns an outcome-tracking action so every
 // call's outcome is recorded.
-func (e *Engine) passOrTrack(_ Op) Action {
+func (e *Engine) passOrTrack() Action {
 	if e.budget == nil {
 		return Pass
 	}
@@ -221,10 +221,22 @@ type ruleAction struct {
 	releaseOnce sync.Once
 }
 
-func (a *ruleAction) Before(ctx context.Context) error {
-	for _, f := range a.faults {
-		if err := f.Apply(ctx); err != nil {
+func (a *ruleAction) Before(ctx context.Context) (err error) {
+	// Release the concurrency slot if a fault returns an error or panics; on the
+	// success path the slot is held until After runs. A Panic fault unwinds
+	// straight through here, so recover-release-repanic keeps WithMaxConcurrent
+	// honest without altering the panic's propagation.
+	defer func() {
+		if r := recover(); r != nil {
 			a.doRelease()
+			panic(r)
+		}
+		if err != nil {
+			a.doRelease()
+		}
+	}()
+	for _, f := range a.faults {
+		if err = f.Apply(ctx); err != nil {
 			return err
 		}
 		a.notifyInjected(ctx, f)

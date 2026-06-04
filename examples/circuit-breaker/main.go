@@ -1,4 +1,4 @@
-// Package circuit-breaker shows a circuit breaker opening after chaos injects
+// Command circuit-breaker shows a circuit breaker opening after chaos injects
 // repeated failures, after which calls short-circuit instead of calling the
 // failing dependency. Run with `go run .`.
 package main
@@ -55,7 +55,7 @@ func drive(n int) (clientCalls int) {
 	eng := newEngine()
 	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, eng)}
 	b := &breaker{threshold: 3}
-	for i := 0; i < n; i++ {
+	for range n {
 		_ = b.call(func() error {
 			resp, err := client.Get(srv.URL)
 			if err != nil {

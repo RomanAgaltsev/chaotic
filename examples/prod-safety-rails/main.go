@@ -1,4 +1,4 @@
-// Package prod-safety-rails shows the production bounds that keep chaos from
+// Command prod-safety-rails shows the production bounds that keep chaos from
 // becoming the outage: a failure budget, a max-concurrent cap, a production
 // guard, and a kill switch.
 // Run with `go run .`.
@@ -42,7 +42,7 @@ func run() (injected, total int) {
 
 	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, newEngine())}
 	const n = 50
-	for i := 0; i < n; i++ {
+	for range n {
 		resp, err := client.Get(srv.URL)
 		if err != nil {
 			injected++

@@ -1,4 +1,4 @@
-// Package db-conn-pool shows database/sql discarding a poisoned connection and
+// Command db-conn-pool shows database/sql discarding a poisoned connection and
 // transparently retrying on a fresh one when chaos injects a connection drop.
 // Run with `go run .`.
 package main

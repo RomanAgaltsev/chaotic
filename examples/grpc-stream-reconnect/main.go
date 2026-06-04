@@ -1,4 +1,4 @@
-// Package grpc-stream-reconnect shows a streaming RPC client retrying stream
+// Command grpc-stream-reconnect shows a streaming RPC client retrying stream
 // creation after chaos injects a transient Unavailable on the first open.
 // Run with `go run .`.
 package main
@@ -43,7 +43,7 @@ func openStream(intc grpc.StreamClientInterceptor) (grpc.ClientStream, error) {
 // Unavailable, up to attempts times.
 func openWithRetry(intc grpc.StreamClientInterceptor, attempts int) (grpc.ClientStream, error) {
 	var err error
-	for i := 0; i < attempts; i++ {
+	for range attempts {
 		var s grpc.ClientStream
 		if s, err = openStream(intc); err == nil {
 			return s, nil
