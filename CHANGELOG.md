@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/ag4r/chaotic/compare/v1.8.0...v1.8.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* review findings ([#27](https://github.com/ag4r/chaotic/issues/27)) ([012f65c](https://github.com/ag4r/chaotic/commit/012f65c3d942895ff8e256f5c84b15a1c06ab535))
+
 ## [1.8.0](https://github.com/ag4r/chaotic/compare/v1.7.0...v1.8.0) (2026-06-04)
 
 

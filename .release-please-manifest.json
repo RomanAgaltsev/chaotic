@@ -1,6 +1,6 @@
 {
-  ".": "1.8.0",
-  "adapter/grpc": "1.5.0",
+  ".": "1.8.1",
+  "adapter/grpc": "1.5.1",
   "adapter/pgx": "1.0.0",
   "observer/otel": "1.1.0",
   "observer/prometheus": "1.2.0",
