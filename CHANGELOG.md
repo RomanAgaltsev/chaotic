@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/ag4r/chaotic/compare/v1.7.0...v1.8.0) (2026-06-04)
+
+
+### Features
+
+* pgx adapter implementation ([#25](https://github.com/ag4r/chaotic/issues/25)) ([4d80c25](https://github.com/ag4r/chaotic/commit/4d80c2587a9aeb675c4823fb27bacd4a3ff5d6ff))
+
 ## [1.7.0](https://github.com/ag4r/chaotic/compare/v1.6.1...v1.7.0) (2026-06-04)
 
 
