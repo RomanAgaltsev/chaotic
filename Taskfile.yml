@@ -8,7 +8,17 @@ env:
 vars:
   # The set of Go modules in this repo. Add new submodules here as they land
   # (also register them in go.work and release-please-config.json).
-  MODULES: ". adapter/grpc observer/otel observer/prometheus observer/slog source/file source/http ./examples/grpc-stream-reconnect"
+  MODULES:
+    - "."
+    - "adapter/grpc"
+    - "adapter/pgx"
+    - "observer/otel"
+    - "observer/prometheus"
+    - "observer/slog"
+    - "source/file"
+    - "source/http"
+    - "./examples/grpc-stream-reconnect"
+    - "./examples/pgx-pool"
 
 tasks:
   default:

@@ -3,7 +3,9 @@ go 1.26
 use (
 	.
 	./adapter/grpc
+	./adapter/pgx
 	./examples/grpc-stream-reconnect
+	./examples/pgx-pool
 	./observer/otel
 	./observer/prometheus
 	./observer/slog

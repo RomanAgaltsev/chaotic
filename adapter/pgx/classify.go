@@ -1,0 +1,82 @@
+package pgx
+
+import (
+	"strconv"
+	"strings"
+
+	"github.com/ag4r/chaotic/engine"
+	"github.com/ag4r/chaotic/internal/sqlclass"
+)
+
+// boolStr returns "true" or "false".
+func boolStr(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
+
+// opQuery builds the Op for Query, QueryRow, or Exec on a wrapped pool/conn/tx.
+// method is "query", "queryrow", or "exec". inTx is true when the caller is a *Tx.
+func opQuery(method, sql string, nArgs int, inTx bool) engine.Op {
+	c := sqlclass.Classify(sql)
+	name := c.Verb
+	if c.Table != "" {
+		name = c.Verb + " " + c.Table
+	}
+	return engine.Op{
+		Kind:   engine.OpPGX,
+		Name:   name,
+		Method: method,
+		Attrs: map[string]string{
+			"table": c.Table,
+			"args":  strconv.Itoa(nArgs),
+			"tx":    boolStr(inTx),
+			"sql":   sql,
+		},
+	}
+}
+
+// opBatch builds the Op for SendBatch. size is the batch's queued statement count.
+func opBatch(size int, inTx bool) engine.Op {
+	return engine.Op{
+		Kind:   engine.OpPGX,
+		Name:   "BATCH",
+		Method: "batch",
+		Attrs: map[string]string{
+			"batch_size": strconv.Itoa(size),
+			"tx":         boolStr(inTx),
+		},
+	}
+}
+
+// opBegin builds the Op for Begin/BeginTx. iso/access/deferrable carry the
+// resolved TxOptions; pass empty strings / false for plain Begin().
+func opBegin(iso, access string, deferrable bool) engine.Op {
+	return engine.Op{
+		Kind:   engine.OpPGX,
+		Name:   "BEGIN",
+		Method: "begin",
+		Attrs: map[string]string{
+			"iso_level":   iso,
+			"access_mode": access,
+			"deferrable":  boolStr(deferrable),
+		},
+	}
+}
+
+// opAcquire builds the Op for Pool.Acquire.
+func opAcquire() engine.Op {
+	return engine.Op{
+		Kind:   engine.OpPGX,
+		Name:   "ACQUIRE",
+		Method: "acquire",
+		Attrs:  nil,
+	}
+}
+
+// txOptsStrings renders pgxv5.TxOptions fields into the string forms used
+// in opBegin's Attrs. Exposed for pool.go / conn.go to call.
+func txOptsStrings(iso, access string, deferrable bool) (string, string, bool) {
+	return strings.ToLower(iso), strings.ToLower(access), deferrable
+}
