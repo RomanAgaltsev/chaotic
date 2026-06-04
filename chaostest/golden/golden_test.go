@@ -132,9 +132,12 @@ func TestWriteReadGoldenFile(t *testing.T) {
 }
 
 func TestRecordReturnsObserverOption(t *testing.T) {
+	// Isolate the working directory so that even under -chaos-update-golden the
+	// cleanup write lands in a temp dir, never the package's real testdata tree.
+	t.Chdir(t.TempDir())
 	// Record returns an engine.Option; building an engine with it must install a
 	// recording observer (a fired rule is captured by the recorder it wires).
-	opt := Record(t, "unused-no-update") // no -chaos-update-golden => cleanup won't write
+	opt := Record(t, "unused-no-update")
 	e := engine.New(opt).AddRule(engine.NewRule(
 		engine.MatchKind(engine.OpHTTPClient),
 		engine.WithFault(fault.Error(errors.New("x"))),

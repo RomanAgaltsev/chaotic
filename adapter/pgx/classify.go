@@ -2,7 +2,6 @@ package pgx
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/ag4r/chaotic/engine"
 	"github.com/ag4r/chaotic/internal/sqlclass"
@@ -73,10 +72,4 @@ func opAcquire() engine.Op {
 		Method: "acquire",
 		Attrs:  nil,
 	}
-}
-
-// txOptsStrings renders pgxv5.TxOptions fields into the string forms used
-// in opBegin's Attrs. Exposed for pool.go / conn.go to call.
-func txOptsStrings(iso, access string, deferrable bool) (string, string, bool) {
-	return strings.ToLower(iso), strings.ToLower(access), deferrable
 }

@@ -28,10 +28,14 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...any) (pgxv5.Rows, 
 	if !c.eng.Enabled() {
 		return c.b.Query(ctx, sql, args...)
 	}
-	if err := c.runChaos(ctx, opQuery("query", sql, len(args), false)); err != nil {
+	action, err := c.runChaos(ctx, opQuery("query", sql, len(args), false))
+	if err != nil {
+		finish(ctx, action, err)
 		return nil, err
 	}
-	return c.b.Query(ctx, sql, args...)
+	rows, qerr := c.b.Query(ctx, sql, args...)
+	finish(ctx, action, qerr)
+	return rows, qerr
 }
 
 // Exec runs the engine's chaos for the operation, then delegates to the
@@ -40,10 +44,14 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...any) (pgconn.Comman
 	if !c.eng.Enabled() {
 		return c.b.Exec(ctx, sql, args...)
 	}
-	if err := c.runChaos(ctx, opQuery("exec", sql, len(args), false)); err != nil {
+	action, err := c.runChaos(ctx, opQuery("exec", sql, len(args), false))
+	if err != nil {
+		finish(ctx, action, err)
 		return pgconn.CommandTag{}, err
 	}
-	return c.b.Exec(ctx, sql, args...)
+	tag, eerr := c.b.Exec(ctx, sql, args...)
+	finish(ctx, action, eerr)
+	return tag, eerr
 }
 
 // QueryRow runs the engine's chaos for the operation, then delegates to the
@@ -53,10 +61,14 @@ func (c *Conn) QueryRow(ctx context.Context, sql string, args ...any) pgxv5.Row 
 	if !c.eng.Enabled() {
 		return c.b.QueryRow(ctx, sql, args...)
 	}
-	if err := c.runChaos(ctx, opQuery("queryrow", sql, len(args), false)); err != nil {
+	action, err := c.runChaos(ctx, opQuery("queryrow", sql, len(args), false))
+	if err != nil {
+		finish(ctx, action, err)
 		return chaosRow{err: err}
 	}
-	return c.b.QueryRow(ctx, sql, args...)
+	row := c.b.QueryRow(ctx, sql, args...)
+	finish(ctx, action, nil)
+	return row
 }
 
 // SendBatch runs the engine's chaos for the operation, then delegates to the
@@ -66,10 +78,14 @@ func (c *Conn) SendBatch(ctx context.Context, b *pgxv5.Batch) pgxv5.BatchResults
 	if !c.eng.Enabled() {
 		return c.b.SendBatch(ctx, b)
 	}
-	if err := c.runChaos(ctx, opBatch(b.Len(), false)); err != nil {
+	action, err := c.runChaos(ctx, opBatch(b.Len(), false))
+	if err != nil {
+		finish(ctx, action, err)
 		return chaosBatch{err: err}
 	}
-	return c.b.SendBatch(ctx, b)
+	results := c.b.SendBatch(ctx, b)
+	finish(ctx, action, nil)
+	return results
 }
 
 // Begin runs the engine's chaos for the operation, then starts a transaction
@@ -82,12 +98,15 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 		}
 		return &Tx{b: inner, eng: c.eng}, nil
 	}
-	if err := c.runChaos(ctx, opBegin("", "", false)); err != nil {
+	action, err := c.runChaos(ctx, opBegin("", "", false))
+	if err != nil {
+		finish(ctx, action, err)
 		return nil, err
 	}
-	inner, err := c.b.Begin(ctx)
-	if err != nil {
-		return nil, err
+	inner, ierr := c.b.Begin(ctx)
+	finish(ctx, action, ierr)
+	if ierr != nil {
+		return nil, ierr
 	}
 	return &Tx{b: inner, eng: c.eng}, nil
 }
@@ -102,18 +121,18 @@ func (c *Conn) BeginTx(ctx context.Context, txOpts pgxv5.TxOptions) (*Tx, error)
 		}
 		return &Tx{b: inner, eng: c.eng}, nil
 	}
-	iso, access, deferrable := txOptsStrings(string(txOpts.IsoLevel), string(txOpts.AccessMode), txOpts.DeferrableMode == pgxv5.Deferrable)
-	if err := c.runChaos(ctx, opBegin(iso, access, deferrable)); err != nil {
-		return nil, err
-	}
-	inner, err := c.b.BeginTx(ctx, txOpts)
+	op := opBegin(string(txOpts.IsoLevel), string(txOpts.AccessMode), txOpts.DeferrableMode == pgxv5.Deferrable)
+	action, err := c.runChaos(ctx, op)
 	if err != nil {
+		finish(ctx, action, err)
 		return nil, err
 	}
-	return &Tx{
-		b:   inner,
-		eng: c.eng,
-	}, nil
+	inner, ierr := c.b.BeginTx(ctx, txOpts)
+	finish(ctx, action, ierr)
+	if ierr != nil {
+		return nil, ierr
+	}
+	return &Tx{b: inner, eng: c.eng}, nil
 }
 
 // Ping is a pass-through. Chaos must not poison health checks.
@@ -151,17 +170,19 @@ func (c *Conn) Conn() *pgxv5.Conn {
 func (c *Conn) Unwrap() any { return c.raw }
 
 // runChaos evaluates the engine and applies the ConnDrop poison if the
-// resulting fault was ErrConnDrop. Returns the translated error (or nil on
-// no chaos / chaos passed).
-func (c *Conn) runChaos(ctx context.Context, op engine.Op) error {
-	err := c.eng.Eval(ctx, op).Before(ctx)
+// resulting fault was ErrConnDrop. It returns the engine action (so the caller
+// can report the outcome and release any held bound via finish) and the
+// translated error (or nil on no chaos / chaos passed).
+func (c *Conn) runChaos(ctx context.Context, op engine.Op) (engine.Action, error) {
+	action := c.eng.Eval(ctx, op)
+	err := action.Before(ctx)
 	if err == nil {
-		return nil
+		return action, nil
 	}
 	if errors.Is(err, fault.ErrConnDrop) {
 		// Poison: close the underlying conn. We ignore Close's error — the
 		// chaos error is what the caller needs to see.
 		_ = c.b.Close(ctx)
 	}
-	return translate(err)
+	return action, translate(err)
 }

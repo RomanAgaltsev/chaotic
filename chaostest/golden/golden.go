@@ -5,7 +5,7 @@
 // Record installs a recording observer. On test cleanup it writes
 // testdata/<name>.golden (JSON lines) when run with -chaos-update-golden (or
 // CHAOS_UPDATE_GOLDEN=1). Replay reads that file, installs rules that reproduce
-// the record fire/skip sequence via engine.Sequence and asserts the run does
+// the recorded fire/skip sequence via engine.Sequence and asserts the run does
 // not diverge.
 //
 // Fidelity: latency/jittered fires replay with their recorded duration.
@@ -51,8 +51,8 @@ import (
 	"github.com/ag4r/chaotic/fault"
 )
 
-// goldenEvent is one serialized engine decision. Fired didtinguishes a fire
-// (Fired=true, FaultKind/LatensyNS set) from skip (Fired=false, Reason set.).
+// goldenEvent is one serialized engine decision. Fired distinguishes a fire
+// (Fired=true, FaultKind/LatencyNS set) from a skip (Fired=false, Reason set).
 type goldenEvent struct {
 	Fired     bool              `json:"fired"`
 	Rule      string            `json:"rule"`

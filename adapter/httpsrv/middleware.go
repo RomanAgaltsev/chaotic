@@ -81,12 +81,12 @@ func handleErr(w http.ResponseWriter, err error) {
 	if errors.Is(err, fault.ErrConnDrop) {
 		hj, ok := w.(http.Hijacker)
 		if !ok {
-			http.Error(w, "chaos: conn drop (no hijacker)", http.StatusInternalServerError)
+			http.Error(w, "chaotic: conn drop (no hijacker)", http.StatusInternalServerError)
 			return
 		}
 		conn, _, herr := hj.Hijack()
 		if herr != nil {
-			http.Error(w, "chaos: conn drop (hijack failed)", http.StatusInternalServerError)
+			http.Error(w, "chaotic: conn drop (hijack failed)", http.StatusInternalServerError)
 			return
 		}
 		_ = conn.Close()

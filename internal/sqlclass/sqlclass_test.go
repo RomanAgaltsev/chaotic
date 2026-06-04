@@ -24,6 +24,8 @@ func TestClassify(t *testing.T) {
 		{"empty", "", "", ""},
 		{"garbage", "this is not sql", "THIS", ""},
 		{"select-no-from", "SELECT 1", "SELECT", ""},
+		{"column-contains-keyword", "SELECT fromage FROM cheeses", "SELECT", "cheeses"},
+		{"keyword-only-as-suffix", "SELECT prefrom, x FROM t", "SELECT", "t"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

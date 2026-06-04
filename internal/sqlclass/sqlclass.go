@@ -82,21 +82,27 @@ func extractTable(verb, rest string) string {
 	}
 }
 
-// tokenAfter returns the next token after the first case-insensitive occurrence
-// of keyword in s. Returns "" if not found.
+// tokenAfter returns the next token after the first whole-word, case-insensitive
+// occurrence of keyword in s. Returns "" if not found. Both sides of the match
+// must be word boundaries, so a column whose name merely contains the keyword
+// (e.g. "fromage" containing "FROM") is skipped rather than blanking the result.
 func tokenAfter(s, keyword string) string {
 	up := strings.ToUpper(s)
-	i := strings.Index(up, keyword)
-	if i < 0 {
-		return ""
+	for from := 0; ; {
+		rel := strings.Index(up[from:], keyword)
+		if rel < 0 {
+			return ""
+		}
+		i := from + rel
+		end := i + len(keyword)
+		beforeOK := i == 0 || !isIdentChar(rune(up[i-1]))
+		afterOK := end >= len(up) || !isIdentChar(rune(up[end]))
+		if beforeOK && afterOK {
+			t, _ := firstToken(s[end:])
+			return cleanIdent(t)
+		}
+		from = end
 	}
-	after := s[i+len(keyword):]
-	// Ensure word boundary.
-	if i+len(keyword) < len(up) && isIdentChar(rune(up[i+len(keyword)])) {
-		return ""
-	}
-	t, _ := firstToken(after)
-	return cleanIdent(t)
 }
 
 // cleanIdent strips surrounding quotes/backticks/brackets and a schema prefix.

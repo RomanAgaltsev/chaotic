@@ -25,11 +25,14 @@ func (p *Pool) Query(ctx context.Context, sql string, args ...any) (pgxv5.Rows, 
 	if !p.eng.Enabled() {
 		return p.b.Query(ctx, sql, args...)
 	}
-	op := opQuery("query", sql, len(args), false)
-	if err := p.eng.Eval(ctx, op).Before(ctx); err != nil {
+	action := p.eng.Eval(ctx, opQuery("query", sql, len(args), false))
+	if err := action.Before(ctx); err != nil {
+		finish(ctx, action, err)
 		return nil, translate(err)
 	}
-	return p.b.Query(ctx, sql, args...)
+	rows, err := p.b.Query(ctx, sql, args...)
+	finish(ctx, action, err)
+	return rows, err
 }
 
 // Exec runs the engine's chaos for the operation, then delegates to the
@@ -38,11 +41,14 @@ func (p *Pool) Exec(ctx context.Context, sql string, args ...any) (pgconn.Comman
 	if !p.eng.Enabled() {
 		return p.b.Exec(ctx, sql, args...)
 	}
-	op := opQuery("exec", sql, len(args), false)
-	if err := p.eng.Eval(ctx, op).Before(ctx); err != nil {
+	action := p.eng.Eval(ctx, opQuery("exec", sql, len(args), false))
+	if err := action.Before(ctx); err != nil {
+		finish(ctx, action, err)
 		return pgconn.CommandTag{}, translate(err)
 	}
-	return p.b.Exec(ctx, sql, args...)
+	tag, err := p.b.Exec(ctx, sql, args...)
+	finish(ctx, action, err)
+	return tag, err
 }
 
 // QueryRow runs the engine's chaos for the operation, then delegates to the
@@ -52,11 +58,17 @@ func (p *Pool) QueryRow(ctx context.Context, sql string, args ...any) pgxv5.Row 
 	if !p.eng.Enabled() {
 		return p.b.QueryRow(ctx, sql, args...)
 	}
-	op := opQuery("queryrow", sql, len(args), false)
-	if err := p.eng.Eval(ctx, op).Before(ctx); err != nil {
+	action := p.eng.Eval(ctx, opQuery("queryrow", sql, len(args), false))
+	if err := action.Before(ctx); err != nil {
+		finish(ctx, action, err)
 		return chaosRow{err: translate(err)}
 	}
-	return p.b.QueryRow(ctx, sql, args...)
+	// The real outcome surfaces only from Scan, which we do not see; report a
+	// nil outcome and release the bound now so the slot is not held for a Scan
+	// that may never come.
+	row := p.b.QueryRow(ctx, sql, args...)
+	finish(ctx, action, nil)
+	return row
 }
 
 // SendBatch runs the engine's chaos for the operation, then delegates to the
@@ -66,11 +78,14 @@ func (p *Pool) SendBatch(ctx context.Context, b *pgxv5.Batch) pgxv5.BatchResults
 	if !p.eng.Enabled() {
 		return p.b.SendBatch(ctx, b)
 	}
-	op := opBatch(b.Len(), false)
-	if err := p.eng.Eval(ctx, op).Before(ctx); err != nil {
+	action := p.eng.Eval(ctx, opBatch(b.Len(), false))
+	if err := action.Before(ctx); err != nil {
+		finish(ctx, action, err)
 		return chaosBatch{err: translate(err)}
 	}
-	return p.b.SendBatch(ctx, b)
+	results := p.b.SendBatch(ctx, b)
+	finish(ctx, action, nil)
+	return results
 }
 
 // Ping is a pass-through: chaos rules MUST NOT poison health checks.
@@ -120,23 +135,19 @@ func (p *Pool) Begin(ctx context.Context) (*Tx, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Tx{
-			b:   inner,
-			eng: p.eng,
-		}, nil
+		return &Tx{b: inner, eng: p.eng}, nil
 	}
-	op := opBegin("", "", false)
-	if err := p.eng.Eval(ctx, op).Before(ctx); err != nil {
+	action := p.eng.Eval(ctx, opBegin("", "", false))
+	if err := action.Before(ctx); err != nil {
+		finish(ctx, action, err)
 		return nil, translate(err)
 	}
 	inner, err := p.b.Begin(ctx)
+	finish(ctx, action, err)
 	if err != nil {
 		return nil, err
 	}
-	return &Tx{
-		b:   inner,
-		eng: p.eng,
-	}, nil
+	return &Tx{b: inner, eng: p.eng}, nil
 }
 
 // BeginTx runs the engine's chaos for the operation, then starts a transaction
@@ -147,24 +158,20 @@ func (p *Pool) BeginTx(ctx context.Context, txOpts pgxv5.TxOptions) (*Tx, error)
 		if err != nil {
 			return nil, err
 		}
-		return &Tx{
-			b:   inner,
-			eng: p.eng,
-		}, nil
+		return &Tx{b: inner, eng: p.eng}, nil
 	}
-	iso, access, deferrable := txOptsStrings(string(txOpts.IsoLevel), string(txOpts.AccessMode), txOpts.DeferrableMode == pgxv5.Deferrable)
-	op := opBegin(iso, access, deferrable)
-	if err := p.eng.Eval(ctx, op).Before(ctx); err != nil {
+	op := opBegin(string(txOpts.IsoLevel), string(txOpts.AccessMode), txOpts.DeferrableMode == pgxv5.Deferrable)
+	action := p.eng.Eval(ctx, op)
+	if err := action.Before(ctx); err != nil {
+		finish(ctx, action, err)
 		return nil, translate(err)
 	}
 	inner, err := p.b.BeginTx(ctx, txOpts)
+	finish(ctx, action, err)
 	if err != nil {
 		return nil, err
 	}
-	return &Tx{
-		b:   inner,
-		eng: p.eng,
-	}, nil
+	return &Tx{b: inner, eng: p.eng}, nil
 }
 
 // Acquire runs the engine's chaos for the operation, then acquires a connection
@@ -175,27 +182,17 @@ func (p *Pool) Acquire(ctx context.Context) (*Conn, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Conn{
-			b: &pooledConnBackend{
-				c: inner,
-			},
-			eng: p.eng,
-			raw: inner,
-		}, nil
+		return &Conn{b: &pooledConnBackend{c: inner}, eng: p.eng, raw: inner}, nil
 	}
-	op := opAcquire()
-	if err := p.eng.Eval(ctx, op).Before(ctx); err != nil {
+	action := p.eng.Eval(ctx, opAcquire())
+	if err := action.Before(ctx); err != nil {
+		finish(ctx, action, err)
 		return nil, translate(err)
 	}
 	inner, err := p.b.Acquire(ctx)
+	finish(ctx, action, err)
 	if err != nil {
 		return nil, err
 	}
-	return &Conn{
-		b: &pooledConnBackend{
-			c: inner,
-		},
-		eng: p.eng,
-		raw: inner,
-	}, nil
+	return &Conn{b: &pooledConnBackend{c: inner}, eng: p.eng, raw: inner}, nil
 }

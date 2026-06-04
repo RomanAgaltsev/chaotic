@@ -13,18 +13,20 @@ import (
 
 // runChaos evaluates the engine, applies the ConnDrop poison via the
 // underlying conn (when the Tx's Conn() returns non-nil), and returns the
-// translated error.
-func (t *Tx) runChaos(ctx context.Context, op engine.Op) error {
-	err := t.eng.Eval(ctx, op).Before(ctx)
+// engine action (so the caller can report the outcome and release any held
+// bound via finish) and the translated error.
+func (t *Tx) runChaos(ctx context.Context, op engine.Op) (engine.Action, error) {
+	action := t.eng.Eval(ctx, op)
+	err := action.Before(ctx)
 	if err == nil {
-		return nil
+		return action, nil
 	}
 	if errors.Is(err, fault.ErrConnDrop) {
 		if c := t.b.Conn(); c != nil {
 			_ = c.Close(ctx)
 		}
 	}
-	return translate(err)
+	return action, translate(err)
 }
 
 // Tx wraps a pgx.Tx and intercepts Query, QueryRow, Exec, SendBatch.
@@ -41,10 +43,14 @@ func (t *Tx) Query(ctx context.Context, sql string, args ...any) (pgxv5.Rows, er
 	if !t.eng.Enabled() {
 		return t.b.Query(ctx, sql, args...)
 	}
-	if err := t.runChaos(ctx, opQuery("query", sql, len(args), true)); err != nil {
+	action, err := t.runChaos(ctx, opQuery("query", sql, len(args), true))
+	if err != nil {
+		finish(ctx, action, err)
 		return nil, err
 	}
-	return t.b.Query(ctx, sql, args...)
+	rows, qerr := t.b.Query(ctx, sql, args...)
+	finish(ctx, action, qerr)
+	return rows, qerr
 }
 
 // Exec runs the engine's chaos for the operation, then delegates to the
@@ -53,10 +59,14 @@ func (t *Tx) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandT
 	if !t.eng.Enabled() {
 		return t.b.Exec(ctx, sql, args...)
 	}
-	if err := t.runChaos(ctx, opQuery("exec", sql, len(args), true)); err != nil {
+	action, err := t.runChaos(ctx, opQuery("exec", sql, len(args), true))
+	if err != nil {
+		finish(ctx, action, err)
 		return pgconn.CommandTag{}, err
 	}
-	return t.b.Exec(ctx, sql, args...)
+	tag, eerr := t.b.Exec(ctx, sql, args...)
+	finish(ctx, action, eerr)
+	return tag, eerr
 }
 
 // QueryRow runs the engine's chaos for the operation, then delegates to the
@@ -66,10 +76,14 @@ func (t *Tx) QueryRow(ctx context.Context, sql string, args ...any) pgxv5.Row {
 	if !t.eng.Enabled() {
 		return t.b.QueryRow(ctx, sql, args...)
 	}
-	if err := t.runChaos(ctx, opQuery("queryrow", sql, len(args), true)); err != nil {
+	action, err := t.runChaos(ctx, opQuery("queryrow", sql, len(args), true))
+	if err != nil {
+		finish(ctx, action, err)
 		return chaosRow{err: err}
 	}
-	return t.b.QueryRow(ctx, sql, args...)
+	row := t.b.QueryRow(ctx, sql, args...)
+	finish(ctx, action, nil)
+	return row
 }
 
 // SendBatch runs the engine's chaos for the operation, then delegates to the
@@ -79,10 +93,14 @@ func (t *Tx) SendBatch(ctx context.Context, b *pgxv5.Batch) pgxv5.BatchResults {
 	if !t.eng.Enabled() {
 		return t.b.SendBatch(ctx, b)
 	}
-	if err := t.runChaos(ctx, opBatch(b.Len(), true)); err != nil {
+	action, err := t.runChaos(ctx, opBatch(b.Len(), true))
+	if err != nil {
+		finish(ctx, action, err)
 		return chaosBatch{err: err}
 	}
-	return t.b.SendBatch(ctx, b)
+	results := t.b.SendBatch(ctx, b)
+	finish(ctx, action, nil)
+	return results
 }
 
 // Begin starts a pseudo-nested transaction (savepoint). Pass-through.

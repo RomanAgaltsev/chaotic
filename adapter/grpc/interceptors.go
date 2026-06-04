@@ -65,11 +65,17 @@ func UnaryServerInterceptor(eng *engine.Engine) grpc.UnaryServerInterceptor {
 }
 
 // reportOutcome forwards the call's error (or the injected fault) to the engine
-// if the action supports outcome reporting.
+// if the action supports outcome reporting, then releases any held bound (e.g. a
+// WithMaxConcurrent slot) by running After. Call it exactly once per action, or
+// the slot leaks and the budget never sees the call. A nil action is a no-op.
 func reportOutcome(ctx context.Context, action engine.Action, callErr error) {
+	if action == nil {
+		return
+	}
 	if o, ok := action.(engine.OutcomeReporter); ok {
 		o.Outcome(ctx, callErr)
 	}
+	_ = action.After(ctx)
 }
 
 // toStatus maps a fault error to a gRPC status.
@@ -100,9 +106,12 @@ func StreamClientInterceptor(eng *engine.Engine) grpc.StreamClientInterceptor {
 		}
 		action := eng.Eval(ctx, op)
 		if err := action.Before(ctx); err != nil {
+			reportOutcome(ctx, action, err) // injected fault counts toward the budget
 			return nil, toStatus(err)
 		}
-		return streamer(ctx, desc, cc, method, opts...)
+		cs, err := streamer(ctx, desc, cc, method, opts...)
+		reportOutcome(ctx, action, err)
+		return cs, err
 	}
 }
 
@@ -120,8 +129,11 @@ func StreamServerInterceptor(eng *engine.Engine) grpc.StreamServerInterceptor {
 		}
 		action := eng.Eval(ss.Context(), op)
 		if err := action.Before(ss.Context()); err != nil {
+			reportOutcome(ss.Context(), action, err) // injected fault counts toward the budget
 			return toStatus(err)
 		}
-		return handler(srv, ss)
+		herr := handler(srv, ss)
+		reportOutcome(ss.Context(), action, herr)
+		return herr
 	}
 }

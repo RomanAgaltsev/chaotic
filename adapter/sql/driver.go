@@ -208,9 +208,14 @@ func translate(err error) error {
 }
 
 // reportOutcome forwards the wrapped call's error to the engine if the action
-// supports it. A nil action (chaos disabled) is a no-op.
+// supports it, then releases any held bound (e.g. a WithMaxConcurrent slot) by
+// running After. A nil action (chaos disabled) is a no-op.
 func reportOutcome(ctx context.Context, action engine.Action, callErr error) {
+	if action == nil {
+		return
+	}
 	if o, ok := action.(engine.OutcomeReporter); ok {
 		o.Outcome(ctx, callErr)
 	}
+	_ = action.After(ctx)
 }
