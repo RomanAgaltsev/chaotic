@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/ag4r/chaotic/compare/adapter/grpc/v1.4.0...adapter/grpc/v1.5.0) (2026-06-04)
+
+
+### Features
+
+* http faults and golden chaos tests ([#23](https://github.com/ag4r/chaotic/issues/23)) ([f7251d1](https://github.com/ag4r/chaotic/commit/f7251d187cc62f9ff2bceee4b60a2d3ca67a57e3))
+
 ## [1.4.0](https://github.com/ag4r/chaotic/compare/adapter/grpc/v1.3.0...adapter/grpc/v1.4.0) (2026-06-03)
 
 

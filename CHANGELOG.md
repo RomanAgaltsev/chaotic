@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/ag4r/chaotic/compare/v1.6.1...v1.7.0) (2026-06-04)
+
+
+### Features
+
+* http faults and golden chaos tests ([#23](https://github.com/ag4r/chaotic/issues/23)) ([f7251d1](https://github.com/ag4r/chaotic/commit/f7251d187cc62f9ff2bceee4b60a2d3ca67a57e3))
+
 ## [1.6.1](https://github.com/ag4r/chaotic/compare/v1.6.0...v1.6.1) (2026-06-04)
 
 
