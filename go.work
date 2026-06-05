@@ -4,6 +4,7 @@ use (
 	.
 	./adapter/grpc
 	./adapter/pgx
+	./adapter/redis
 	./examples/grpc-stream-reconnect
 	./examples/pgx-pool
 	./observer/otel
@@ -11,4 +12,5 @@ use (
 	./observer/slog
 	./source/file
 	./source/http
+	examples/redis-cache-fallback
 )

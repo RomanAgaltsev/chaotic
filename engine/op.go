@@ -18,6 +18,7 @@ const (
 	OpGRPCServer
 	OpExplicit // chaos.Point call sites
 	OpPGX
+	OpRedis // go-redis adapter
 )
 
 // Op describes a single intercepted call. Adapters construct an Op only after

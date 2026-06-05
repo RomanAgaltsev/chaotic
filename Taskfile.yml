@@ -12,6 +12,7 @@ vars:
     - "."
     - "adapter/grpc"
     - "adapter/pgx"
+    - "adapter/redis"
     - "observer/otel"
     - "observer/prometheus"
     - "observer/slog"
@@ -19,6 +20,8 @@ vars:
     - "source/http"
     - "./examples/grpc-stream-reconnect"
     - "./examples/pgx-pool"
+    - "./examples/redis-cache-fallback"
+
 
 tasks:
   default:

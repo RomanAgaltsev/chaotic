@@ -15,7 +15,7 @@ func TestPassActionIsNoOp(t *testing.T) {
 }
 
 func TestKindsAreDistinct(t *testing.T) {
-	kinds := []Kind{OpHTTPClient, OpHTTPServer, OpSQL, OpGRPCClient, OpGRPCServer, OpExplicit, OpPGX}
+	kinds := []Kind{OpHTTPClient, OpHTTPServer, OpSQL, OpGRPCClient, OpGRPCServer, OpExplicit, OpPGX, OpRedis}
 	seen := map[Kind]bool{}
 	for _, k := range kinds {
 		if seen[k] {

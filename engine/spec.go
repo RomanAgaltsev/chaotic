@@ -50,6 +50,8 @@ var kindNames = map[string]Kind{
 	"grpc_client": OpGRPCClient,
 	"grpc_server": OpGRPCServer,
 	"explicit":    OpExplicit,
+	"pgx":         OpPGX,
+	"redis":       OpRedis,
 }
 
 // BuildRule converts a RuleSpec into a Rule, validating kinds, counter type,

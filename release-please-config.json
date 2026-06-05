@@ -12,6 +12,12 @@
     "adapter/grpc": {
       "component": "adapter/grpc"
     },
+    "adapter/redis": {
+      "component": "adapter/redis"
+    },
+    "adapter/pgx": {
+      "component": "adapter/pgx"
+    },
     "observer/otel": {
       "component": "observer/otel"
     },
