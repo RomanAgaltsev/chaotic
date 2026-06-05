@@ -1,8 +1,8 @@
 {
-  ".": "1.8.1",
+  ".": "1.9.0",
   "adapter/grpc": "1.5.1",
-  "adapter/pgx": "1.0.0",
-  "adapter/redis": "0.0.0",
+  "adapter/pgx": "1.1.0",
+  "adapter/redis": "1.0.0",
   "observer/otel": "1.1.0",
   "observer/prometheus": "1.2.0",
   "observer/slog": "1.2.0",

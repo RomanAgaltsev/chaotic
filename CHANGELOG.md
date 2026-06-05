@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/ag4r/chaotic/compare/v1.8.1...v1.9.0) (2026-06-05)
+
+
+### Features
+
+* redis adapter ([#30](https://github.com/ag4r/chaotic/issues/30)) ([658d570](https://github.com/ag4r/chaotic/commit/658d570b7974093ac76b7617696e31164e2b25a5))
+
 ## [1.8.1](https://github.com/ag4r/chaotic/compare/v1.8.0...v1.8.1) (2026-06-04)
 
 
