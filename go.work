@@ -4,13 +4,15 @@ use (
 	.
 	./adapter/grpc
 	./adapter/pgx
+	./adapter/rabbitmq
 	./adapter/redis
 	./examples/grpc-stream-reconnect
 	./examples/pgx-pool
+	./examples/rabbitmq-publish-retry
+    ./examples/redis-cache-fallback
 	./observer/otel
 	./observer/prometheus
 	./observer/slog
 	./source/file
 	./source/http
-	examples/redis-cache-fallback
 )

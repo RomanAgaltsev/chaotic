@@ -12,6 +12,7 @@ vars:
     - "."
     - "adapter/grpc"
     - "adapter/pgx"
+    - "adapter/rabbitmq"
     - "adapter/redis"
     - "observer/otel"
     - "observer/prometheus"
@@ -21,6 +22,7 @@ vars:
     - "./examples/grpc-stream-reconnect"
     - "./examples/pgx-pool"
     - "./examples/redis-cache-fallback"
+    - "./examples/rabbitmq-publish-retry"
 
 
 tasks:

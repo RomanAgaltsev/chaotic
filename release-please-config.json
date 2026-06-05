@@ -12,6 +12,9 @@
     "adapter/grpc": {
       "component": "adapter/grpc"
     },
+    "adapter/rabbitmq": {
+      "component": "adapter/rabbitmq"
+    },
     "adapter/redis": {
       "component": "adapter/redis"
     },

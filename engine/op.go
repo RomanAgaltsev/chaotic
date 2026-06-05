@@ -17,8 +17,9 @@ const (
 	OpGRPCClient
 	OpGRPCServer
 	OpExplicit // chaos.Point call sites
-	OpPGX
-	OpRedis // go-redis adapter
+	OpPGX      // pgx adapter
+	OpRedis    // go-redis adapter
+	OpRabbitMQ // rabbitmq/amqp091-go adapter
 )
 
 // Op describes a single intercepted call. Adapters construct an Op only after
