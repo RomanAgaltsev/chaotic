@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/ag4r/chaotic/compare/v1.9.0...v1.10.0) (2026-06-05)
+
+
+### Features
+
+* rabbitmq adapter ([#32](https://github.com/ag4r/chaotic/issues/32)) ([aacf7e5](https://github.com/ag4r/chaotic/commit/aacf7e50519a093e8c837a2f740888db8558da1c))
+
 ## [1.9.0](https://github.com/ag4r/chaotic/compare/v1.8.1...v1.9.0) (2026-06-05)
 
 
