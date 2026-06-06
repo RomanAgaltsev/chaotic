@@ -12,14 +12,23 @@
 //
 // *Channel embeds *amqp.Channel, so every method this adapter does not fault
 // (QueueDeclare, ExchangeDeclare, Qos, Get, ...) passes through unchanged and a
-// *Channel is a drop-in for *amqp.Channel.
+// *Channel is a drop-in for *amqp.Channel. Call methods on the *Channel (and
+// *Conn) directly: reaching through the embedded *amqp.Channel/*amqp.Connection
+// — e.g. ch.Channel.PublishWithContext(...) — bypasses fault injection.
 //
 // Fault mapping (faults stay in amqp091-go's native error model):
 //
-//	fault.Latency / Jittered  -> ctx-honoring sleep, then the real op runs
+//	fault.Latency / Jittered  -> sleep, then the real op runs (see context note below)
 //	fault.Error(err)          -> err is returned as-is (supply &amqp.Error{...} for native handling)
 //	fault.ConnDrop()          -> amqp.ErrClosed, so channel/connection recovery engages
 //	fault.Panic(v)            -> panic(v)
+//
+// Context and latency cancellation: only PublishWithContext threads the caller's
+// context into the engine, so a Latency/Jittered fault there is cancellable via
+// that context. Consume, Ack, Nack, and Conn.Channel have no context parameter
+// in amqp091-go, so they evaluate against context.Background(): a latency fault
+// on those paths runs to completion and cannot be interrupted by cancelling the
+// surrounding request.
 //
 // Per-delivery faults are out of scope for v1: a Delivery returned by Consume
 // carries an Acknowledger bound to the underlying channel, so delivery.Ack()

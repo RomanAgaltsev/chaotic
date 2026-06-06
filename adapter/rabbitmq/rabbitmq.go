@@ -13,12 +13,18 @@ import (
 )
 
 // Channel wraps an *amqp.Channel so the chaotic engine is consulted on each
-// publish, consume and ack/nack. Every other *amqp.Channel method os promoted
+// publish, consume and ack/nack. Every other *amqp.Channel method is promoted
 // from the embedded value, so a *Channel is a drop-in for *amqp.Channel.
+//
+// In production the embedded *amqp.Channel and the ch seam point at the same
+// channel: the embedded value supplies method promotion for the un-faulted
+// methods, while the faultable overrides call through ch. The seam exists so
+// unit tests can drive the overrides against a fake without a live broker; the
+// two must always reference the same underlying channel.
 type Channel struct {
-	*amqp.Channel
-	ch  amqpChannel
-	eng *engine.Engine
+	*amqp.Channel             // promotes every un-faulted method (QueueDeclare, Get, ...)
+	ch            amqpChannel // faultable-method seam; == Channel in production, a fake in tests
+	eng           *engine.Engine
 }
 
 // WrapChannel returns a *Channel that consults eng on each faultable operation.
@@ -95,7 +101,7 @@ func (c *Channel) Ack(tag uint64, multiple bool) error {
 		return c.ch.Ack(tag, multiple)
 	}
 	ctx := context.Background()
-	op := engine.Op{Kind: engine.OpRabbitMQ, Method: "ack"}
+	op := engine.Op{Kind: engine.OpRabbitMQ, Name: "ack", Method: "ack"}
 	action := c.eng.Eval(ctx, op)
 	if err := action.Before(ctx); err != nil {
 		reportOutcome(ctx, action, err)
@@ -113,7 +119,7 @@ func (c *Channel) Nack(tag uint64, multiple, requeue bool) error {
 		return c.ch.Nack(tag, multiple, requeue)
 	}
 	ctx := context.Background()
-	op := engine.Op{Kind: engine.OpRabbitMQ, Method: "nack"}
+	op := engine.Op{Kind: engine.OpRabbitMQ, Name: "nack", Method: "nack"}
 	action := c.eng.Eval(ctx, op)
 	if err := action.Before(ctx); err != nil {
 		reportOutcome(ctx, action, err)

@@ -153,3 +153,35 @@ func TestAckPassesThroughWhenNoRule(t *testing.T) {
 		t.Fatalf("underlying Ack ran %d times, want 1", fake.acks)
 	}
 }
+
+// Ack and Nack carry Name "ack"/"nack", so a rule can target acknowledgement
+// faults selectively with MatchName without also catching publishes (whose Name
+// is the routing key).
+func TestAckTargetableByName(t *testing.T) {
+	sentinel := errors.New("ack failed")
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpRabbitMQ),
+		engine.MatchName("ack"),
+		engine.Always(),
+		engine.WithFault(fault.Error(sentinel)),
+	).Named("ack-only"))
+
+	fake := &fakeChannel{}
+	c := newChannel(fake, eng)
+
+	// A publish is NOT targeted by MatchName("ack").
+	if err := c.PublishWithContext(context.Background(), "ex", "rk", false, false, amqp.Publishing{}); err != nil {
+		t.Fatalf("publish err = %v, want nil (MatchName(\"ack\") must not catch publishes)", err)
+	}
+	if fake.publishes != 1 {
+		t.Fatalf("underlying publish ran %d times, want 1", fake.publishes)
+	}
+
+	// The Ack path is.
+	if err := c.Ack(1, false); !errors.Is(err, sentinel) {
+		t.Fatalf("Ack err = %v, want sentinel", err)
+	}
+	if fake.acks != 0 {
+		t.Fatalf("underlying Ack ran %d times, want 0 (fault short-circuits)", fake.acks)
+	}
+}

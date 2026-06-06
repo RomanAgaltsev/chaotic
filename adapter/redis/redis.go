@@ -30,7 +30,7 @@ func firstKey(cmd goredis.Cmder) string {
 }
 
 // NewHook returns a redis.Hook that consults eng on every command, pipeline
-// and dial. When eng is disabled or has no rules, every path is a newar-zero-cost
+// and dial. When eng is disabled or has no rules, every path is a near-zero-cost
 // passthrough.
 func NewHook(eng *engine.Engine) goredis.Hook {
 	return chaosHook{eng: eng}
