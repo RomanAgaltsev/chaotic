@@ -12,6 +12,9 @@
     "adapter/grpc": {
       "component": "adapter/grpc"
     },
+    "adapter/kafka": {
+      "component": "adapter/kafka"
+    },
     "adapter/mongo": {
       "component": "adapter/mongo"
     },

@@ -54,6 +54,7 @@ var kindNames = map[string]Kind{
 	"redis":       OpRedis,
 	"rabbitmq":    OpRabbitMQ,
 	"mongo":       OpMongo,
+	"kafka":       OpKafka,
 }
 
 // BuildRule converts a RuleSpec into a Rule, validating kinds, counter type,
