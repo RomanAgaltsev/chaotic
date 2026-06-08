@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/ag4r/chaotic/compare/v1.10.1...v1.11.0) (2026-06-08)
+
+
+### Features
+
+* mongo adapter ([#36](https://github.com/ag4r/chaotic/issues/36)) ([836f912](https://github.com/ag4r/chaotic/commit/836f912aab068e3c743b9c20d505bb252cda3a9f))
+
 ## [1.10.1](https://github.com/ag4r/chaotic/compare/v1.10.0...v1.10.1) (2026-06-06)
 
 

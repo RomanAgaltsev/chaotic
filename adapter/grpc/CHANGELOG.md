@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/ag4r/chaotic/compare/adapter/grpc/v1.5.1...adapter/grpc/v1.6.0) (2026-06-08)
+
+
+### Features
+
+* mongo adapter ([#36](https://github.com/ag4r/chaotic/issues/36)) ([836f912](https://github.com/ag4r/chaotic/commit/836f912aab068e3c743b9c20d505bb252cda3a9f))
+
 ## [1.5.1](https://github.com/ag4r/chaotic/compare/adapter/grpc/v1.5.0...adapter/grpc/v1.5.1) (2026-06-04)
 
 
