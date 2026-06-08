@@ -12,6 +12,9 @@
     "adapter/grpc": {
       "component": "adapter/grpc"
     },
+    "adapter/mongo": {
+      "component": "adapter/mongo"
+    },
     "adapter/rabbitmq": {
       "component": "adapter/rabbitmq"
     },

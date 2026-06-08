@@ -1,6 +1,7 @@
 {
   ".": "1.10.1",
   "adapter/grpc": "1.5.1",
+  "adapter/mongo": "0.0.0",
   "adapter/pgx": "1.1.0",
   "adapter/rabbitmq": "1.0.1",
   "adapter/redis": "1.0.1",

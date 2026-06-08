@@ -20,6 +20,7 @@ const (
 	OpPGX      // pgx adapter
 	OpRedis    // go-redis adapter
 	OpRabbitMQ // rabbitmq/amqp091-go adapter
+	OpMongo    // mongo-driver v2 adapter
 )
 
 // Op describes a single intercepted call. Adapters construct an Op only after

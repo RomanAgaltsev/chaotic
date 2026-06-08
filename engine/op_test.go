@@ -25,6 +25,7 @@ func TestKindsAreDistinct(t *testing.T) {
 		OpPGX,
 		OpRedis,
 		OpRabbitMQ,
+		OpMongo,
 	}
 	seen := map[Kind]bool{}
 	for _, k := range kinds {

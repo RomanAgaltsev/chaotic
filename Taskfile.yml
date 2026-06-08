@@ -11,6 +11,7 @@ vars:
   MODULES:
     - "."
     - "adapter/grpc"
+    - "adapter/mongo"
     - "adapter/pgx"
     - "adapter/rabbitmq"
     - "adapter/redis"
@@ -20,6 +21,7 @@ vars:
     - "source/file"
     - "source/http"
     - "./examples/grpc-stream-reconnect"
+    - "./examples/mongo-read-fallback"
     - "./examples/pgx-pool"
     - "./examples/redis-cache-fallback"
     - "./examples/rabbitmq-publish-retry"

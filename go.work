@@ -3,10 +3,12 @@ go 1.26
 use (
 	.
 	./adapter/grpc
+	./adapter/mongo
 	./adapter/pgx
 	./adapter/rabbitmq
 	./adapter/redis
 	./examples/grpc-stream-reconnect
+	./examples/mongo-read-fallback
 	./examples/pgx-pool
 	./examples/rabbitmq-publish-retry
     ./examples/redis-cache-fallback
