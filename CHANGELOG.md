@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/ag4r/chaotic/compare/v1.12.0...v1.13.0) (2026-06-10)
+
+
+### Features
+
+* aws adapter ([#40](https://github.com/ag4r/chaotic/issues/40)) ([d1d8873](https://github.com/ag4r/chaotic/commit/d1d8873b700d31d7c5620d6cf1762246e1603977))
+
 ## [1.12.0](https://github.com/ag4r/chaotic/compare/v1.11.0...v1.12.0) (2026-06-08)
 
 
