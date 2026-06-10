@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # Go modules — every module in the repo (root + adapters, observers, sources, examples).
+  # Dependabot has no native "biweekly" interval; weekly is the closest supported cadence.
+  - package-ecosystem: gomod
+    directories:
+      - "/"
+      - "/adapter/grpc"
+      - "/adapter/kafka"
+      - "/adapter/mongo"
+      - "/adapter/pgx"
+      - "/adapter/rabbitmq"
+      - "/adapter/redis"
+      - "/observer/otel"
+      - "/observer/prometheus"
+      - "/observer/slog"
+      - "/source/file"
+      - "/source/http"
+      - "/examples/aws-dynamodb-retry"
+      - "/examples/grpc-stream-reconnect"
+      - "/examples/kafka-write-retry"
+      - "/examples/mongo-read-fallback"
+      - "/examples/pgx-pool"
+      - "/examples/rabbitmq-publish-retry"
+      - "/examples/redis-cache-fallback"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: ["dependencies", "go"]
+    open-pull-requests-limit: 10
+    groups:
+      go-minor-patch:
+        update-types: [minor, patch]
+
+  # GitHub Actions used in .github/workflows
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: ["dependencies", "ci"]
+    groups:
+      actions:
+        patterns: ["*"]

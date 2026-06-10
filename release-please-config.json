@@ -9,6 +9,9 @@
     ".": {
       "include-component-in-tag": false
     },
+    "adapter/aws": {
+      "component": "adapter/aws"
+    },
     "adapter/grpc": {
       "component": "adapter/grpc"
     },

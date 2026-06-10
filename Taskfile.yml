@@ -10,6 +10,7 @@ vars:
   # (also register them in go.work and release-please-config.json).
   MODULES:
     - "."
+    - "adapter/aws"
     - "adapter/grpc"
     - "adapter/kafka"
     - "adapter/mongo"
@@ -21,6 +22,7 @@ vars:
     - "observer/slog"
     - "source/file"
     - "source/http"
+    - "./examples/aws-dynamodb-retry"
     - "./examples/grpc-stream-reconnect"
     - "./examples/kafka-write-retry"
     - "./examples/mongo-read-fallback"
