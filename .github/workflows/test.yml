@@ -13,7 +13,7 @@ jobs:
     outputs:
       modules: ${{ steps.set.outputs.modules }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: set
         run: |
           mods=$(find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; \
@@ -31,8 +31,8 @@ jobs:
     env:
       GOWORK: off
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: tidy check
@@ -45,7 +45,7 @@ jobs:
         run: go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
       - name: upload coverage
         if: matrix.go == 'stable'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: ${{ matrix.module }}/coverage.out
           flags: ${{ matrix.module }}
@@ -62,8 +62,8 @@ jobs:
     env:
       GOWORK: off
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: "stable"
       - name: benchmarks (compile + run)
