@@ -5,6 +5,7 @@
   "adapter/kafka": "1.0.0",
   "adapter/mongo": "1.0.0",
   "adapter/nats": "1.0.0",
+  "adapter/net": "0.0.0",
   "adapter/pgx": "1.1.0",
   "adapter/rabbitmq": "1.0.1",
   "adapter/redis": "1.0.1",

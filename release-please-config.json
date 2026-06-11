@@ -24,6 +24,9 @@
     "adapter/nats": {
       "component": "adapter/nats"
     },
+    "adapter/net": {
+      "component": "adapter/net"
+    },
     "adapter/rabbitmq": {
       "component": "adapter/rabbitmq"
     },

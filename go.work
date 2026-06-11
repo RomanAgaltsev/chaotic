@@ -7,6 +7,7 @@ use (
 	./adapter/kafka
 	./adapter/mongo
 	./adapter/nats
+	./adapter/net
 	./adapter/pgx
 	./adapter/rabbitmq
 	./adapter/redis
@@ -15,6 +16,7 @@ use (
 	./examples/kafka-write-retry
 	./examples/mongo-read-fallback
 	./examples/nats-request-retry
+	./examples/net-conn-drop
 	./examples/pgx-pool
 	./examples/rabbitmq-publish-retry
 	./examples/redis-cache-fallback

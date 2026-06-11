@@ -24,6 +24,7 @@ const (
 	OpKafka    // segmentio/kafka-go adapter
 	OpAWS      // aws-sdk-go-v2 adapter
 	OpNATS     // nats.go adapter
+	OpNet      // raw net.Conn adapter
 )
 
 // Op describes a single intercepted call. Adapters construct an Op only after

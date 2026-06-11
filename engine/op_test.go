@@ -29,6 +29,7 @@ func TestKindsAreDistinct(t *testing.T) {
 		OpKafka,
 		OpAWS,
 		OpNATS,
+		OpNet,
 	}
 	seen := map[Kind]bool{}
 	for _, k := range kinds {
