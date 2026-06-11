@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/ag4r/chaotic/compare/v1.15.0...v1.16.0) (2026-06-11)
+
+
+### Features
+
+* rule matchers and limits ([#49](https://github.com/ag4r/chaotic/issues/49)) ([6295dc2](https://github.com/ag4r/chaotic/commit/6295dc291971cd20ca865d93188b9da76676350d))
+
 ## [1.15.0](https://github.com/ag4r/chaotic/compare/v1.14.0...v1.15.0) (2026-06-11)
 
 
