@@ -1,0 +1,14 @@
+[
+  {
+    "name": "good",
+    "kinds": ["explicit"],
+    "name_glob": "checkout.afterCommit",
+    "faults": [{ "type": "conn_drop" }]
+  },
+  {
+    "name": "typo",
+    "kinds": ["explicit"],
+    "name_glob": "checkout.afterCommt",
+    "faults": [{ "type": "conn_drop" }]
+  }
+]

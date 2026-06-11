@@ -19,6 +19,7 @@ vars:
     - "adapter/pgx"
     - "adapter/rabbitmq"
     - "adapter/redis"
+    - "./cmd/chaotic-points"
     - "observer/otel"
     - "observer/prometheus"
     - "observer/slog"

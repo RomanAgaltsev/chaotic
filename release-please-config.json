@@ -36,6 +36,9 @@
     "adapter/pgx": {
       "component": "adapter/pgx"
     },
+    "cmd/chaotic-points": {
+      "component": "cmd/chaotic-points"
+    },
     "observer/otel": {
       "component": "observer/otel"
     },

@@ -11,6 +11,7 @@ use (
 	./adapter/pgx
 	./adapter/rabbitmq
 	./adapter/redis
+	./cmd/chaotic-points
 	./examples/aws-dynamodb-retry
 	./examples/grpc-stream-reconnect
 	./examples/kafka-write-retry

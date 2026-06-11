@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v6
       - id: set
         run: |
-          mods=$(find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; \
+          mods=$(find . -name go.mod -not -path '*/vendor/*' -not -path '*/testdata/*' -exec dirname {} \; \
             | sort | jq -R . | jq -cs .)
           echo "modules=$mods" >> "$GITHUB_OUTPUT"
 
