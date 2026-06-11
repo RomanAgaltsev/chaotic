@@ -14,6 +14,7 @@ const (
 	KindConnDrop
 	KindHTTPStatus
 	KindHeader
+	KindClock
 )
 
 // Kinded is implemented by every built-in fault so tools can classify it

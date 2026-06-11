@@ -25,15 +25,19 @@ import (
 	"context"
 
 	"github.com/ag4r/chaotic/engine"
+	"github.com/ag4r/chaotic/fault"
 )
 
 type engineKey struct{}
 
-// WithEngine returns a child context carrying eng. Point and PointWith consult
-// the engine bound to the context they are given. Binding nil clears the engine
-// for a sub-scope (Point becomes a no-op there).
+// WithEngine returns a child context carrying eng and a fresh, zero-skew clock
+// cell (see fault.WithClock). Point and PointWith consult the engine bound to
+// the context they are given; engine.Now reads the clock cell, which a fault.Clock
+// fault skews. Binding nil clears the engine for a sub-scope (Point becomes a
+// no-op there); a fresh unskewed clock cell is still bound.
 func WithEngine(ctx context.Context, eng *engine.Engine) context.Context {
-	return context.WithValue(ctx, engineKey{}, eng)
+	ctx = context.WithValue(ctx, engineKey{}, eng)
+	return fault.WithClock(ctx)
 }
 
 // engineFrom returns the engine bound to ctx, or nil if none.

@@ -69,3 +69,12 @@ func ExampleHeaderStrip() {
 	fmt.Println(hf.Strip, hf.Key)
 	// Output: true X-Trace-Id
 }
+
+// ExampleClock shows that a Clock fault, once applied, sets the skew that
+// fault.Skew (and engine.Now) read back from the context.
+func ExampleClock() {
+	ctx := fault.WithClock(context.Background())
+	_ = fault.Clock(72 * time.Hour).Apply(ctx)
+	fmt.Println(fault.Skew(ctx))
+	// Output: 72h0m0s
+}

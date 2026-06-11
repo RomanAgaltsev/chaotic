@@ -19,6 +19,7 @@ func TestKindOfBuiltinFaults(t *testing.T) {
 		{"error", Error(errors.New("x")), KindError},
 		{"panic", Panic("boom"), KindPanic},
 		{"conn_drop", ConnDrop(), KindConnDrop},
+		{"clock", Clock(time.Hour), KindClock},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

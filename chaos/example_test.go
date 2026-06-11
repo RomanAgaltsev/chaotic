@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ag4r/chaotic/chaos"
 	"github.com/ag4r/chaotic/engine"
@@ -44,4 +45,22 @@ func ExamplePointWith() {
 	// Output:
 	// premium: degraded
 	// free: <nil>
+}
+
+// ExampleWithEngine_clock shows fault.Clock skewing engine.Now: a rule jumps
+// the clock 48h ahead when an explicit point fires, so a deadline computed
+// after the jump is far in the future relative to one computed before it.
+func ExampleWithEngine_clock() {
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.WithFault(fault.Clock(48*time.Hour)),
+		engine.MatchName("expiry.check"),
+	))
+	ctx := chaos.WithEngine(context.Background(), eng)
+
+	start := engine.Now(ctx)             // real clock (no skew yet)
+	_ = chaos.Point(ctx, "expiry.check") // fire Clock: +48h
+	jumped := engine.Now(ctx)
+
+	fmt.Println(jumped.Sub(start) > 47*time.Hour)
+	// Output: true
 }
