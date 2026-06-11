@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/ag4r/chaotic/compare/v1.18.0...v1.19.0) (2026-06-11)
+
+
+### Features
+
+* property testing ([#55](https://github.com/ag4r/chaotic/issues/55)) ([872dc72](https://github.com/ag4r/chaotic/commit/872dc72ec901cdc1234c888d5ad611d46e4f78a9))
+
 ## [1.18.0](https://github.com/ag4r/chaotic/compare/v1.17.0...v1.18.0) (2026-06-11)
 
 
