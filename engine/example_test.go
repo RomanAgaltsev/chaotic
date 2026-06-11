@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/ag4r/chaotic/engine"
 	"github.com/ag4r/chaotic/fault"
@@ -106,4 +108,49 @@ func ExampleBuildRule() {
 	eng := engine.New().AddRule(rule)
 	fmt.Println("fired:", fire(eng, engine.Op{Kind: engine.OpHTTPClient}) != nil)
 	// Output: fired: true
+}
+
+func ExampleMatchTimeWindow() {
+	// Only inject between 02:00 and 04:00 local time.
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpHTTPClient),
+		engine.MatchTimeWindow(2, 0, 4, 0),
+		engine.WithFault(fault.Latency(0)),
+	).Named("nightly"))
+	fmt.Println(eng.Enabled())
+	// Output: true
+}
+
+func ExampleMatchNameRegex() {
+	// path.Match's * does not cross "/"; a regexp can.
+	re := regexp.MustCompile(`^/api/v[0-9]+/users/.*$`)
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchNameRegex(re),
+		engine.WithFault(fault.Error(errors.New("boom"))),
+	).Named("users-api"))
+	fmt.Println(eng.Enabled())
+	// Output: true
+}
+
+func ExampleStickyAttr() {
+	// Once a user trips the fault, keep them degraded for a minute.
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpHTTPClient),
+		engine.Probability(0.1, 1),
+		engine.StickyAttr("user", time.Minute, 1024),
+		engine.WithFault(fault.Error(errors.New("degraded"))),
+	).Named("sticky-user"))
+	fmt.Println(eng.Enabled())
+	// Output: true
+}
+
+func ExampleWithPerRuleRateLimit() {
+	// Fail Redis calls, but never more than 10 injected faults per second.
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpRedis),
+		engine.WithPerRuleRateLimit(10),
+		engine.WithFault(fault.ConnDrop()),
+	).Named("redis-flaky"))
+	fmt.Println(eng.Enabled())
+	// Output: true
 }

@@ -142,8 +142,22 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 		if !r.matches(ctx, op) {
 			continue
 		}
-		if !r.counter.shouldFire() {
+		fire := false
+		switch {
+		case r.sticky != nil && r.sticky.sticky(op):
+			fire = true
+		case r.counter.shouldFire():
+			fire = true
+			if r.sticky != nil {
+				r.sticky.mark(op)
+			}
+		}
+		if !fire {
 			e.notifySkip(r.name, op, ReasonCounter)
+			continue
+		}
+		if r.rateLimiter != nil && !r.rateLimiter.allow() {
+			e.notifySkip(r.name, op, ReasonRateLimit)
 			continue
 		}
 		if e.budget != nil && e.budget.overBudget() {

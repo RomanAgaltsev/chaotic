@@ -18,10 +18,12 @@ type RuleOption func(*Rule)
 // they share state via internal pointers - never modify a Rule's selectors or
 // faults after passing it to AddRule.
 type Rule struct {
-	name     string
-	matchers []matcher
-	counter  counter
-	faults   []fault.Fault
+	name        string
+	matchers    []matcher
+	counter     counter
+	faults      []fault.Fault
+	sticky      *stickyTracker
+	rateLimiter *tokenBucket
 }
 
 type matcher func(ctx context.Context, op Op) bool
