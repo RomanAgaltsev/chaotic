@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/ag4r/chaotic/compare/v1.16.0...v1.17.0) (2026-06-11)
+
+
+### Features
+
+* rules dsl ([#51](https://github.com/ag4r/chaotic/issues/51)) ([46eeaaf](https://github.com/ag4r/chaotic/commit/46eeaaf6bd4262be67ebb501180d8e761c2bf4d9))
+
 ## [1.16.0](https://github.com/ag4r/chaotic/compare/v1.15.0...v1.16.0) (2026-06-11)
 
 
