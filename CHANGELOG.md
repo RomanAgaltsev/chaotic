@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/ag4r/chaotic/compare/v1.17.0...v1.18.0) (2026-06-11)
+
+
+### Features
+
+* scenarios ([#53](https://github.com/ag4r/chaotic/issues/53)) ([a89971d](https://github.com/ag4r/chaotic/commit/a89971d94fdd6cbe97a59211993171e9ebe1d08d))
+
 ## [1.17.0](https://github.com/ag4r/chaotic/compare/v1.16.0...v1.17.0) (2026-06-11)
 
 
