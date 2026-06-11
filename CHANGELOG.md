@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/ag4r/chaotic/compare/v1.14.0...v1.15.0) (2026-06-11)
+
+
+### Features
+
+* net adapter ([#46](https://github.com/ag4r/chaotic/issues/46)) ([e3c6ae8](https://github.com/ag4r/chaotic/commit/e3c6ae8992460515d08386f20c34d7dfa2fbbc5e))
+
 ## [1.14.0](https://github.com/ag4r/chaotic/compare/v1.13.0...v1.14.0) (2026-06-11)
 
 
