@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/ag4r/chaotic/compare/v1.13.0...v1.14.0) (2026-06-11)
+
+
+### Features
+
+* nats adapter ([#43](https://github.com/ag4r/chaotic/issues/43)) ([6ece470](https://github.com/ag4r/chaotic/commit/6ece4706547d537511fdb942d13d187eb81ef830))
+
 ## [1.13.0](https://github.com/ag4r/chaotic/compare/v1.12.0...v1.13.0) (2026-06-10)
 
 
