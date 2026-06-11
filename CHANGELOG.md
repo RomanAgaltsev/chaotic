@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/ag4r/chaotic/compare/v1.19.0...v1.20.0) (2026-06-11)
+
+
+### Features
+
+* bench testing ([#57](https://github.com/ag4r/chaotic/issues/57)) ([831564b](https://github.com/ag4r/chaotic/commit/831564ba510e0e94319d6ec44bfef414d971d279))
+
 ## [1.19.0](https://github.com/ag4r/chaotic/compare/v1.18.0...v1.19.0) (2026-06-11)
 
 
