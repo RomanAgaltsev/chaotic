@@ -6,6 +6,7 @@ use (
 	./adapter/grpc
 	./adapter/kafka
 	./adapter/mongo
+	./adapter/nats
 	./adapter/pgx
 	./adapter/rabbitmq
 	./adapter/redis
@@ -13,9 +14,10 @@ use (
 	./examples/grpc-stream-reconnect
 	./examples/kafka-write-retry
 	./examples/mongo-read-fallback
+	./examples/nats-request-retry
 	./examples/pgx-pool
 	./examples/rabbitmq-publish-retry
-    ./examples/redis-cache-fallback
+	./examples/redis-cache-fallback
 	./observer/otel
 	./observer/prometheus
 	./observer/slog

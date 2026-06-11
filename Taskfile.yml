@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 # GOWORK=off makes every task resolve each module's own go.mod (CI parity).
 # Use the go.work workspace directly (not these tasks) for cross-module editing.
@@ -14,6 +14,7 @@ vars:
     - "adapter/grpc"
     - "adapter/kafka"
     - "adapter/mongo"
+    - "adapter/nats"
     - "adapter/pgx"
     - "adapter/rabbitmq"
     - "adapter/redis"
@@ -26,10 +27,10 @@ vars:
     - "./examples/grpc-stream-reconnect"
     - "./examples/kafka-write-retry"
     - "./examples/mongo-read-fallback"
+    - "./examples/nats-request-retry"
     - "./examples/pgx-pool"
     - "./examples/redis-cache-fallback"
     - "./examples/rabbitmq-publish-retry"
-
 
 tasks:
   default:
@@ -125,49 +126,49 @@ tasks:
     cmds:
       - for: { var: MODULES }
         task: test:race
-        vars: { MODULE: '{{.ITEM}}' }
+        vars: { MODULE: "{{.ITEM}}" }
 
   lint:all:
     desc: "Lint across all modules"
     cmds:
       - for: { var: MODULES }
         task: lint
-        vars: { MODULE: '{{.ITEM}}' }
+        vars: { MODULE: "{{.ITEM}}" }
 
   fmt:all:
     desc: "Format across all modules"
     cmds:
       - for: { var: MODULES }
         task: fmt
-        vars: { MODULE: '{{.ITEM}}' }
+        vars: { MODULE: "{{.ITEM}}" }
 
   vuln:all:
     desc: "govulncheck across all modules"
     cmds:
       - for: { var: MODULES }
         task: vuln
-        vars: { MODULE: '{{.ITEM}}' }
+        vars: { MODULE: "{{.ITEM}}" }
 
   chaos-off:all:
     desc: "chaos_off alloc gate across all modules"
     cmds:
       - for: { var: MODULES }
         task: chaos-off
-        vars: { MODULE: '{{.ITEM}}' }
+        vars: { MODULE: "{{.ITEM}}" }
 
   tidy:check:all:
     desc: "tidy check across all modules"
     cmds:
       - for: { var: MODULES }
         task: tidy:check
-        vars: { MODULE: '{{.ITEM}}' }
+        vars: { MODULE: "{{.ITEM}}" }
 
   tidy:all:
     desc: "tidy across all modules"
     cmds:
       - for: { var: MODULES }
         task: tidy
-        vars: { MODULE: '{{.ITEM}}' }
+        vars: { MODULE: "{{.ITEM}}" }
 
   ci:
     desc: "Full local gate (what CI runs)"

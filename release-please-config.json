@@ -21,6 +21,9 @@
     "adapter/mongo": {
       "component": "adapter/mongo"
     },
+    "adapter/nats": {
+      "component": "adapter/nats"
+    },
     "adapter/rabbitmq": {
       "component": "adapter/rabbitmq"
     },
