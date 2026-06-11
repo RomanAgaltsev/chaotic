@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/ag4r/chaotic/compare/v1.20.0...v1.21.0) (2026-06-11)
+
+
+### Features
+
+* points analyzer ([#59](https://github.com/ag4r/chaotic/issues/59)) ([2389608](https://github.com/ag4r/chaotic/commit/2389608363835ded17102331e9c83e8c208c2f98))
+
 ## [1.20.0](https://github.com/ag4r/chaotic/compare/v1.19.0...v1.20.0) (2026-06-11)
 
 
