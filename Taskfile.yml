@@ -33,6 +33,7 @@ vars:
     - "./examples/pgx-pool"
     - "./examples/redis-cache-fallback"
     - "./examples/rabbitmq-publish-retry"
+    - "./examples/terms-dsl"
 
 tasks:
   default:

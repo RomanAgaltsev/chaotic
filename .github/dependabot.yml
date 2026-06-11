@@ -27,6 +27,7 @@ updates:
       - "/examples/pgx-pool"
       - "/examples/rabbitmq-publish-retry"
       - "/examples/redis-cache-fallback"
+      - "/examples/terms-dsl"
     schedule:
       interval: weekly
       day: monday

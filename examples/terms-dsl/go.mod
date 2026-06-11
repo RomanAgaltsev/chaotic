@@ -1,0 +1,9 @@
+module github.com/ag4r/chaotic/examples/terms-dsl
+
+go 1.26
+
+toolchain go1.26.4
+
+require github.com/ag4r/chaotic v0.0.0
+
+replace github.com/ag4r/chaotic => ../..

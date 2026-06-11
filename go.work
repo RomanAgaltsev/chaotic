@@ -20,6 +20,7 @@ use (
 	./examples/pgx-pool
 	./examples/rabbitmq-publish-retry
 	./examples/redis-cache-fallback
+	./examples/terms-dsl
 	./observer/otel
 	./observer/prometheus
 	./observer/slog
