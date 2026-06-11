@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.0](https://github.com/ag4r/chaotic/compare/v1.21.0...v1.22.0) (2026-06-11)
+
+
+### Features
+
+* fault clock ([#61](https://github.com/ag4r/chaotic/issues/61)) ([63a7edb](https://github.com/ag4r/chaotic/commit/63a7edb54c7e7726a8d3a0a0f5030b893fc03473))
+
 ## [1.21.0](https://github.com/ag4r/chaotic/compare/v1.20.0...v1.21.0) (2026-06-11)
 
 
