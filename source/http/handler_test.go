@@ -92,3 +92,59 @@ func TestListAndCountRoutes(t *testing.T) {
 		t.Fatalf("unknown count = %d, want 404", rec3.Code)
 	}
 }
+
+func TestPerRulePutAndDelete(t *testing.T) {
+	eng := engine.New()
+	h := srchttp.New(eng, srchttp.WithWritable(true))
+
+	// PUT a single rule from a terms string; URL name is authoritative.
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/rules/flaky", strings.NewReader(`kind(http_client)=error("boom")`))
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("PUT = %d %s", rec.Code, rec.Body.String())
+	}
+	op := engine.Op{Kind: engine.OpHTTPClient, Name: "/x"}
+	if eng.Eval(context.Background(), op).Before(context.Background()) == nil {
+		t.Fatal("the PUT rule should fire")
+	}
+	if eng.Hits("flaky") == 0 {
+		t.Fatal("rule should be named after the URL, not the body")
+	}
+
+	// DELETE it; it stops firing.
+	recd := httptest.NewRecorder()
+	h.ServeHTTP(recd, httptest.NewRequest(http.MethodDelete, "/rules/flaky", nil))
+	if recd.Code != http.StatusNoContent {
+		t.Fatalf("DELETE = %d", recd.Code)
+	}
+	if eng.Enabled() {
+		t.Fatal("engine should be empty after deleting the only rule")
+	}
+}
+
+func TestPerRulePutRejectsMultiAndInvalid(t *testing.T) {
+	h := srchttp.New(engine.New(), srchttp.WithWritable(true))
+
+	multi := httptest.NewRecorder()
+	h.ServeHTTP(multi, httptest.NewRequest(http.MethodPut, "/rules/x",
+		strings.NewReader(`kind(sql)=conndrop; kind(redis)=conndrop`)))
+	if multi.Code != http.StatusBadRequest {
+		t.Fatalf("multi-rule PUT = %d, want 400", multi.Code)
+	}
+
+	bad := httptest.NewRecorder()
+	h.ServeHTTP(bad, httptest.NewRequest(http.MethodPut, "/rules/x", strings.NewReader(`nonsense(`)))
+	if bad.Code != http.StatusBadRequest {
+		t.Fatalf("invalid PUT = %d, want 400", bad.Code)
+	}
+}
+
+func TestPerRuleWritesNeedWritable(t *testing.T) {
+	h := srchttp.New(engine.New()) // read-only
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/rules/x", strings.NewReader(`kind(sql)=conndrop`)))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("PUT on read-only = %d, want 405", rec.Code)
+	}
+}

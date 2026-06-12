@@ -23,6 +23,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/source/terms"
 )
 
 // Handler is an http.Handler bound to an engine.
@@ -59,6 +60,8 @@ func New(eng *engine.Engine, opts ...Option) *Handler {
 	mux.HandleFunc("PUT /{$}", h.postWhole)
 	mux.HandleFunc("GET /rules", h.listRules)
 	mux.HandleFunc("GET /rules/{name}/count", h.ruleCount)
+	mux.HandleFunc("PUT /rules/{name}", h.putRule)
+	mux.HandleFunc("DELETE /rules/{name}", h.deleteRule)
 	h.mux = mux
 	return h
 }
@@ -190,4 +193,77 @@ func (h *Handler) ruleCount(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = fmt.Fprintf(w, "%d\n", h.eng.Hits(name))
+}
+
+func (h *Handler) putRule(w http.ResponseWriter, r *http.Request) {
+	if !h.writable {
+		http.Error(w, "read-only", http.StatusMethodNotAllowed)
+		return
+	}
+	name := r.PathValue("name")
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	specs, err := terms.Parse(string(body))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(specs) != 1 {
+		http.Error(w, "PUT /rules/{name} accepts exactly one rule", http.StatusBadRequest)
+		return
+	}
+	spec := specs[0]
+	spec.Name = name // the URL name is authoritative
+	if _, err := engine.BuildRule(spec); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	if _, exists := h.specs[name]; !exists {
+		h.order = append(h.order, name)
+	}
+	h.specs[name] = spec
+	err = h.rebuildLocked()
+	h.mu.Unlock()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) deleteRule(w http.ResponseWriter, r *http.Request) {
+	if !h.writable {
+		http.Error(w, "read-only", http.StatusMethodNotAllowed)
+		return
+	}
+	name := r.PathValue("name")
+	h.mu.Lock()
+	if _, ok := h.specs[name]; !ok {
+		h.mu.Unlock()
+		http.Error(w, "no such rule", http.StatusNotFound)
+		return
+	}
+	delete(h.specs, name)
+	h.order = removeName(h.order, name)
+	err := h.rebuildLocked()
+	h.mu.Unlock()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func removeName(names []string, name string) []string {
+	out := names[:0]
+	for _, n := range names {
+		if n != name {
+			out = append(out, n)
+		}
+	}
+	return out
 }
