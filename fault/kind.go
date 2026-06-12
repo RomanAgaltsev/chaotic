@@ -16,6 +16,9 @@ const (
 	KindHeader
 	KindClock
 	KindDisconnect
+	KindSlowReader
+	KindSlowWriter
+	KindTruncate
 )
 
 // Kinded is implemented by every built-in fault so tools can classify it
