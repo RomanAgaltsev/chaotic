@@ -120,7 +120,17 @@ func (r *reader) shapeRead(sfe *fault.StreamFaultError, b []byte) (int, error) {
 	}
 }
 
-func (r *reader) cappedRead(b []byte) (int, error) { return r.inner.Read(b) }
+func (r *reader) cappedRead(b []byte) (int, error) {
+	if r.cap.remaining <= 0 {
+		return 0, io.EOF
+	}
+	if len(b) > r.cap.remaining {
+		b = b[:r.cap.remaining]
+	}
+	n, err := r.inner.Read(b)
+	r.cap.remaining -= n
+	return n, err
+}
 
 func (w *writer) shapeWrite(sfe *fault.StreamFaultError, b []byte) (int, error) {
 	switch sfe.Mode {
@@ -137,7 +147,22 @@ func (w *writer) shapeWrite(sfe *fault.StreamFaultError, b []byte) (int, error) 
 	}
 }
 
-func (w *writer) cappedWrite(b []byte) (int, error) { return w.inner.Write(b) }
+func (w *writer) cappedWrite(b []byte) (int, error) {
+	if w.cap.remaining <= 0 {
+		return 0, io.ErrShortWrite
+	}
+	short := false
+	if len(b) > w.cap.remaining {
+		b = b[:w.cap.remaining]
+		short = true
+	}
+	n, err := w.inner.Write(b)
+	w.cap.remaining -= n
+	if err == nil && short {
+		err = io.ErrShortWrite
+	}
+	return n, err
+}
 
 // slow sleeps for the time it takes to move n bytes at rate bytes/sec. rate == 0
 // blocks until the process exits (the "stream that never ends" fault); io has no

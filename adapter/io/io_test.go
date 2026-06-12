@@ -88,3 +88,39 @@ func TestSlowWriterMismatchOnReaderIsNoOp(t *testing.T) {
 		t.Fatal("the rule should still record hits")
 	}
 }
+
+func TestTruncateReaderStopsAtLimitSticky(t *testing.T) {
+	// Times(1): the fault fires once, but the cap must apply to the whole stream.
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpIO),
+		engine.Times(1),
+		engine.WithFault(fault.Truncate(4)),
+	).Named("trunc"))
+
+	r := chaosio.WrapReader(strings.NewReader("abcdefghij"), eng)
+	got, err := io.ReadAll(r) // ReadAll calls Read repeatedly
+	if err != nil {
+		t.Fatalf("ReadAll err = %v", err)
+	}
+	if string(got) != "abcd" {
+		t.Fatalf("got %q, want \"abcd\" (truncated at 4, sticky)", got)
+	}
+}
+
+func TestTruncateWriterShortWrite(t *testing.T) {
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpIO),
+		engine.Always(),
+		engine.WithFault(fault.Truncate(3)),
+	).Named("trunc"))
+
+	var buf bytes.Buffer
+	w := chaosio.WrapWriter(&buf, eng)
+	n, err := w.Write([]byte("abcdef"))
+	if n != 3 || !errors.Is(err, io.ErrShortWrite) {
+		t.Fatalf("Write = (%d, %v), want (3, io.ErrShortWrite)", n, err)
+	}
+	if buf.String() != "abc" {
+		t.Fatalf("buf = %q, want \"abc\"", buf.String())
+	}
+}
