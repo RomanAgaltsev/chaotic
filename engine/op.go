@@ -25,6 +25,7 @@ const (
 	OpAWS      // aws-sdk-go-v2 adapter
 	OpNATS     // nats.go adapter
 	OpNet      // raw net.Conn adapter
+	OpIO       // io.Reader / io.Writer adapter
 )
 
 // Op describes a single intercepted call. Adapters construct an Op only after
