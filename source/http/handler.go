@@ -192,7 +192,10 @@ func (h *Handler) ruleCount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")
-	_, _ = fmt.Fprintf(w, "%d\n", h.eng.Hits(name))
+	// G705 false positive: the only value written is the integer hit count via
+	// %d; the request-derived rule name is used solely as a lookup key above and
+	// is never emitted, so the response cannot carry user-controlled markup.
+	_, _ = fmt.Fprintf(w, "%d\n", h.eng.Hits(name)) //nolint:gosec // integer-only output, no user-controlled data reaches the writer
 }
 
 func (h *Handler) putRule(w http.ResponseWriter, r *http.Request) {
