@@ -77,12 +77,15 @@ func (c *Conn) Write(b []byte) (int, error) {
 }
 
 // mapErr translates a fault error into net's model. ConnDrop becomes a
-// *net.OpError wrapping io.ErrUnexpectedEOF — what a peer reset looks like to a
-// net caller — so the caller's connection-error handling fires; every other fault
-// error passes through unchanged.
+// *net.OpError wrapping io.ErrUnexpectedEOF (a peer reset); Disconnect becomes a
+// *net.OpError wrapping io.EOF (an orderly close). Every other fault error
+// passes through unchanged.
 func mapErr(op, network string, err error) error {
 	if errors.Is(err, fault.ErrConnDrop) {
 		return &net.OpError{Op: op, Net: network, Err: io.ErrUnexpectedEOF}
+	}
+	if errors.Is(err, fault.ErrDisconnect) {
+		return &net.OpError{Op: op, Net: network, Err: io.EOF}
 	}
 	return err
 }

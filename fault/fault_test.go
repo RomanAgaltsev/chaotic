@@ -136,3 +136,16 @@ func timeApply(t *testing.T, f Fault) time.Duration {
 	}
 	return time.Since(start)
 }
+
+func TestDisconnectReturnsSentinel(t *testing.T) {
+	err := Disconnect().Apply(context.Background())
+	if !errors.Is(err, ErrDisconnect) {
+		t.Fatalf("Apply returned %v, want errors.Is(ErrDisconnect) == true", err)
+	}
+	if errors.Is(err, ErrConnDrop) {
+		t.Fatal("Disconnect must not alias ErrConnDrop")
+	}
+	if KindOf(Disconnect()) != KindDisconnect {
+		t.Fatalf("KindOf(Disconnect()) = %v, want KindDisconnect", KindOf(Disconnect()))
+	}
+}

@@ -17,3 +17,13 @@ func ExampleDatabaseOutageCascade() {
 	fmt.Println(act.Before(context.Background()) != nil)
 	// Output: true
 }
+
+func ExampleAWSRegionFailover() {
+	eng := engine.New()
+	scenarios.AWSRegionFailover(eng, scenarios.WithCount(1))
+
+	// The first AWS call hits the region outage.
+	act := eng.Eval(context.Background(), engine.Op{Kind: engine.OpAWS, Name: "s3.GetObject"})
+	fmt.Println(act.Before(context.Background()) != nil)
+	// Output: true
+}

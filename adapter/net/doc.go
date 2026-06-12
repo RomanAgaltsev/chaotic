@@ -19,6 +19,7 @@
 //	fault.Error(err)          -> returned from Read/Write/DialContext
 //	fault.ConnDrop()          -> *net.OpError wrapping io.ErrUnexpectedEOF (never auto-closes)
 //	fault.Panic(v)            -> panic(v)
+//	fault.Disconnect()		  -> *net.OpError wrapping io.EOF
 //
 // Byte-rate faults (SlowReader/SlowWriter, per-byte) pair with this adapter but
 // are a later addition. Build with -tags chaos_off to compile the wrappers out:

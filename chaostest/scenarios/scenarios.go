@@ -54,9 +54,12 @@ func DatabaseOutageCascade(eng *engine.Engine, opts ...Option) {
 		engine.Times(c.count),
 		engine.WithFault(fault.ConnDrop()),
 	).Named("scenarios/db-outage"))
+	// Eval short-circuits on the first firing rule, so this rule's counter only
+	// starts advancing once the outage rule above stops firing. Its window is
+	// therefore its own first c.count matches, not c.count+1..2*c.count.
 	eng.AddRule(engine.NewRule(
 		engine.MatchKind(engine.OpSQL, engine.OpPGX),
-		engine.Range(c.count+1, 2*c.count),
+		engine.Range(1, c.count),
 		engine.WithFault(fault.Latency(c.latency)),
 	).Named("scenarios/db-recovery-lag"))
 }
@@ -95,4 +98,25 @@ func PartialNetworkPartition(eng *engine.Engine, opts ...Option) {
 		engine.Probability(c.errorRate, 0),
 		engine.WithFault(fault.ConnDrop()),
 	).Named("scenarios/partition"))
+}
+
+// AWSRegionFailover drops the first WithCount AWS calls (the region goes
+// unreachable), then injects WithLatency on the next WithCount calls (the
+// failover to a healthy region, warming up). Models an AWS regional outage and
+// the latency hit while traffic shifts to another region.
+func AWSRegionFailover(eng *engine.Engine, opts ...Option) {
+	c := apply(opts)
+	eng.AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpAWS),
+		engine.Times(c.count),
+		engine.WithFault(fault.ConnDrop()),
+	).Named("scenarios/aws-region-down"))
+	// Eval short-circuits on the first firing rule, so this rule's counter only
+	// starts advancing once the region-down rule above stops firing. Its window
+	// is therefore its own first c.count matches, not c.count+1..2*c.count.
+	eng.AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpAWS),
+		engine.Range(1, c.count),
+		engine.WithFault(fault.Latency(c.latency)),
+	).Named("scenarios/aws-failover-lag"))
 }

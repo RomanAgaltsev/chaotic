@@ -163,3 +163,28 @@ func TestWrapDialerReturnsWrappedConn(t *testing.T) {
 		t.Fatalf("dialed conn Read = %v, want sentinel (conn was wrapped)", err)
 	}
 }
+
+func TestReadDisconnectMapsToEOF(t *testing.T) {
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpNet),
+		engine.Always(),
+		engine.WithFault(fault.Disconnect()),
+	).Named("close"))
+
+	a, _ := pipePair(t)
+	c := chaosnet.WrapConn(a, eng)
+	_, err := c.Read(make([]byte, 8))
+	var opErr *net.OpError
+	if !errors.As(err, &opErr) {
+		t.Fatalf("err = %T %v, want *net.OpError", err, err)
+	}
+	if !errors.Is(err, io.EOF) {
+		t.Fatalf("err chain = %v, want io.EOF inside", err)
+	}
+	if errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Fatal("graceful Disconnect must not look like a hard reset")
+	}
+	if errors.Is(err, fault.ErrDisconnect) {
+		t.Fatal("raw chaotic sentinel must not leak to the caller")
+	}
+}

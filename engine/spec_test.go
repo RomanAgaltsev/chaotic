@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"testing"
+
+	"github.com/ag4r/chaotic/fault"
 )
 
 func TestBuildRuleConstructsMatchingRule(t *testing.T) {
@@ -147,5 +149,18 @@ func TestBuildRuleStagesValidationErrors(t *testing.T) {
 				t.Fatalf("err = %v, want containing %q", err, tt.want)
 			}
 		})
+	}
+}
+
+func TestBuildFaultDisconnect(t *testing.T) {
+	r, err := BuildRule(RuleSpec{
+		Kinds:  []string{"net"},
+		Faults: []FaultSpec{{Type: "disconnect"}},
+	})
+	if err != nil {
+		t.Fatalf("BuildRule: %v", err)
+	}
+	if got := r.Info().Faults; len(got) != 1 || got[0] != fault.KindDisconnect {
+		t.Fatalf("faults = %v, want [KindDisconnect]", got)
 	}
 }

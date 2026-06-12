@@ -23,6 +23,11 @@ type Fault interface {
 // connection-drop error (driver.ErrBadConn, status.Unavailable, etc.).
 var ErrConnDrop = errors.New("chaotic: connection drop")
 
+// ErrDisconnect is the sentinel returned by Disconnect's Apply. Each adapter
+// detects this sentinel and substitutes its native graceful-close error (an
+// orderly FIN), as distinct from ErrConnDrop's hard reset.
+var ErrDisconnect = errors.New("chaotic: graceful disconnect")
+
 // Latency sleeps for d. Returns ctx.Err() if the context is canceled first.
 // A non-positive d returns immediately.
 func Latency(d time.Duration) Fault {
@@ -153,6 +158,17 @@ func (connDropFault) Apply(context.Context) error {
 func (connDropFault) Kind() Kind {
 	return KindConnDrop
 }
+
+// Disconnect returns ErrDisconnect, modeling an orderly connection close (a TCP
+// FIN). Distinct from ConnDrop, which models a hard reset; real clients often
+// take different code paths for the two.
+func Disconnect() Fault { return disconnectFault{} }
+
+type disconnectFault struct{}
+
+func (disconnectFault) Apply(context.Context) error { return ErrDisconnect }
+
+func (disconnectFault) Kind() Kind { return KindDisconnect }
 
 // JitteredSeed is like Jittered but draws from a seeded PCG source, so the
 // sequence of sleep durations is reproducible across runs with the same seed.

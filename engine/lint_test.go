@@ -148,3 +148,13 @@ func TestLintSpecsStageFaultsFlowThroughChecks(t *testing.T) {
 		t.Fatal("broad-scope panic stage fault should produce a High finding")
 	}
 }
+
+func TestLintSpecsBroadDisconnectIsHigh(t *testing.T) {
+	rep := LintSpecs([]RuleSpec{{
+		Name:   "kill",
+		Faults: []FaultSpec{{Type: "disconnect"}}, // no kind, no glob => broad
+	}})
+	if rep.OK() {
+		t.Fatal("a broad-scope disconnect should produce a High finding")
+	}
+}

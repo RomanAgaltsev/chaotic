@@ -77,3 +77,27 @@ func TestPartialNetworkPartition(t *testing.T) {
 	}
 	_ = fault.ErrConnDrop
 }
+
+func TestAWSRegionFailover(t *testing.T) {
+	eng := chaostest.New(t)
+	scenarios.AWSRegionFailover(eng, scenarios.WithCount(3))
+
+	// First 3 AWS calls drop (region unreachable).
+	drops := 0
+	for range 3 {
+		if err := fire(t, eng, engine.Op{Kind: engine.OpAWS, Name: "dynamodb.GetItem"}); err != nil {
+			drops++
+		}
+	}
+	if drops != 3 {
+		t.Fatalf("got %d drops in the outage window, want 3", drops)
+	}
+	// Next 3 calls are latency-only (no error returned by Before).
+	for range 3 {
+		if err := fire(t, eng, engine.Op{Kind: engine.OpAWS, Name: "dynamodb.GetItem"}); err != nil {
+			t.Fatalf("failover-lag window should not return an error, got %v", err)
+		}
+	}
+	chaostest.AssertHits(t, eng, "scenarios/aws-region-down", 3)
+	chaostest.AssertHits(t, eng, "scenarios/aws-failover-lag", 3)
+}

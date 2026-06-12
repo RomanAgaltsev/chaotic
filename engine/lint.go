@@ -68,6 +68,14 @@ func lintName(name string) string {
 	return name
 }
 
+// isTerminalFaultType reports whether a fault spec type permanently fails the
+// call (a panic or a connection drop) rather than merely delaying it. Kept in
+// sync with terminalKindName so the spec-level and introspection-level linters
+// agree on what counts as terminal.
+func isTerminalFaultType(t string) bool {
+	return t == "panic" || t == "conn_drop" || t == "disconnect"
+}
+
 // terminalKindName returns a human-readable name for a terminal fault kind
 // (panic or connection drop), or "" if k is not terminal.
 func terminalKindName(k fault.Kind) string {
@@ -76,6 +84,8 @@ func terminalKindName(k fault.Kind) string {
 		return "panic"
 	case fault.KindConnDrop:
 		return "conn_drop"
+	case fault.KindDisconnect:
+		return "disconnect"
 	}
 	return ""
 }
@@ -158,7 +168,7 @@ func LintSpecs(specs []RuleSpec) Report {
 			last := s.Stages[len(s.Stages)-1]
 			if last.Times == 0 {
 				for _, fs := range last.Faults {
-					if fs.Type == "panic" || fs.Type == "conn_drop" || fs.Type == "error" {
+					if isTerminalFaultType(fs.Type) {
 						rep.Findings = append(rep.Findings, Finding{
 							Severity: SeverityWarn,
 							Rule:     name,
@@ -228,7 +238,7 @@ func lintFault(name string, broad bool, fs FaultSpec, rep *Report) {
 			Message:  fmt.Sprintf("latency %s exceeds the %s ceiling", d, lintLatencyCeiling),
 		})
 	}
-	if broad && (fs.Type == "panic" || fs.Type == "conn_drop") {
+	if broad && isTerminalFaultType(fs.Type) {
 		rep.Findings = append(rep.Findings, Finding{
 			Severity: SeverityHigh,
 			Rule:     name,

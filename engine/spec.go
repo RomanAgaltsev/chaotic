@@ -209,6 +209,8 @@ func buildFault(fs FaultSpec) (fault.Fault, error) {
 		return fault.Panic(fs.Value), nil
 	case "conn_drop":
 		return fault.ConnDrop(), nil
+	case "disconnect":
+		return fault.Disconnect(), nil
 	}
 	return nil, fmt.Errorf("chaotic: unknown fault type %q", fs.Type)
 }

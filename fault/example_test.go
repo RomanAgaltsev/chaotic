@@ -78,3 +78,12 @@ func ExampleClock() {
 	fmt.Println(fault.Skew(ctx))
 	// Output: 72h0m0s
 }
+
+func ExampleDisconnect() {
+	// Disconnect returns a sentinel each adapter maps to its native orderly-close
+	// error (io.EOF in adapter/net), distinct from ConnDrop's hard reset.
+	f := fault.Disconnect()
+	err := f.Apply(context.Background())
+	fmt.Println(errors.Is(err, fault.ErrDisconnect))
+	// Output: true
+}

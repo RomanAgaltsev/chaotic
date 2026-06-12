@@ -10,7 +10,5 @@
 //	ThunderingHerdAfterDeploy  - a fraction of HTTP-server requests return 503.
 //	SlowLeaderElection         - Redis (lock/coordination) calls run slow for a window.
 //	PartialNetworkPartition    - a fraction of outbound gRPC/HTTP calls drop.
-//
-// AWSRegionFailover is pending: it needs engine.OpAWS (the adapter/aws kind),
-// which lands with that adapter; it will be added here as an additive follow-on.
+//	AWSRegionFailover          - AWS calls in a region drop, then failover runs slow.
 package scenarios
