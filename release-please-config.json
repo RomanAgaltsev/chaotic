@@ -15,6 +15,9 @@
     "adapter/grpc": {
       "component": "adapter/grpc"
     },
+    "adapter/io": {
+      "component": "adapter/io"
+    },
     "adapter/kafka": {
       "component": "adapter/kafka"
     },
@@ -47,6 +50,12 @@
     },
     "observer/slog": {
       "component": "observer/slog"
+    },
+    "source/file": {
+      "component": "source/file"
+    },
+    "source/http": {
+      "component": "source/http"
     }
   }
 }

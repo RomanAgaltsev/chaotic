@@ -87,3 +87,12 @@ func ExampleDisconnect() {
 	fmt.Println(errors.Is(err, fault.ErrDisconnect))
 	// Output: true
 }
+
+func ExampleSlowReader() {
+	// Stream-shaping faults return a *StreamFaultError that adapter/io detects
+	// via errors.As and uses to shape the stream (here: 1 KB/s).
+	err := fault.SlowReader(1024).Apply(context.Background())
+	var sfe *fault.StreamFaultError
+	fmt.Println(errors.As(err, &sfe), sfe.Rate)
+	// Output: true 1024
+}

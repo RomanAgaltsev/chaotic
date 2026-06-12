@@ -30,6 +30,7 @@ func TestKindsAreDistinct(t *testing.T) {
 		OpAWS,
 		OpNATS,
 		OpNet,
+		OpIO,
 	}
 	seen := map[Kind]bool{}
 	for _, k := range kinds {
@@ -54,4 +55,13 @@ func TestBuildRuleAcceptsExplicitKind(t *testing.T) {
 	if !r.matches(context.Background(), Op{Kind: OpExplicit, Name: "p"}) {
 		t.Fatal("rule did not match an OpExplicit op")
 	}
+}
+
+func TestOpIOKind(t *testing.T) {
+	// OpIO is registered and round-trips through kindNames.
+	r, err := BuildRule(RuleSpec{Kinds: []string{"io"}})
+	if err != nil {
+		t.Fatalf("BuildRule with kind \"io\": %v", err)
+	}
+	_ = r
 }

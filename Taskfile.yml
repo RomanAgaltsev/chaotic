@@ -12,6 +12,7 @@ vars:
     - "."
     - "adapter/aws"
     - "adapter/grpc"
+    - "adapter/io"
     - "adapter/kafka"
     - "adapter/mongo"
     - "adapter/nats"
@@ -34,6 +35,7 @@ vars:
     - "./examples/pgx-pool"
     - "./examples/redis-cache-fallback"
     - "./examples/rabbitmq-publish-retry"
+    - "./examples/slow-body-read"
     - "./examples/terms-dsl"
 
 tasks:
