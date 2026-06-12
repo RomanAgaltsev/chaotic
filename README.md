@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/RomanAgaltsev/chaotic)](https://github.com/RomanAgaltsev/chaotic/releases)
 [![License: MIT](https://img.shields.io/github/license/RomanAgaltsev/chaotic)](./LICENSE)
 
-**In-process chaos engineering for Go.** Wrap your integration boundaries — `http.RoundTripper`, `net/http` middleware, `database/sql` driver, gRPC interceptors, `pgx` pool, Redis, Kafka, NATS, MongoDB, RabbitMQ, the AWS SDK, and raw `net.Conn` — and inject latency, errors, panics, connection drops, clock skew, and HTTP faults on demand. When no rules are configured the wrappers are near-zero-cost passthroughs, so chaotic is safe to leave linked everywhere. For a hard guarantee, the `chaos_off` build tag compiles every wrapper down to a bare passthrough.
+**In-process chaos engineering for Go.** Wrap your integration boundaries — `http.RoundTripper`, `net/http` middleware, `database/sql` driver, gRPC interceptors, `pgx` pool, Redis, Kafka, NATS, MongoDB, RabbitMQ, the AWS SDK, raw `net.Conn`, and any `io.Reader`/`io.Writer` — and inject latency, errors, panics, connection drops, clock skew, slow or truncated streams, and HTTP faults on demand. When no rules are configured the wrappers are near-zero-cost passthroughs, so chaotic is safe to leave linked everywhere. For a hard guarantee, the `chaos_off` build tag compiles every wrapper down to a bare passthrough.
 
 ```go
 eng := chaostest.New(t)
@@ -49,6 +49,7 @@ go get github.com/RomanAgaltsev/chaotic/adapter/nats         # nats.go connectio
 go get github.com/RomanAgaltsev/chaotic/adapter/mongo        # mongo-driver v2 collection/db/client
 go get github.com/RomanAgaltsev/chaotic/adapter/rabbitmq     # amqp091-go channel & connection
 go get github.com/RomanAgaltsev/chaotic/adapter/aws          # aws-sdk-go-v2 middleware
+go get github.com/RomanAgaltsev/chaotic/adapter/io           # io.Reader / io.Writer stream faults
 go get github.com/RomanAgaltsev/chaotic/observer/slog        # slog observer
 go get github.com/RomanAgaltsev/chaotic/observer/prometheus  # Prometheus metrics
 go get github.com/RomanAgaltsev/chaotic/observer/otel        # OpenTelemetry
@@ -56,7 +57,7 @@ go get github.com/RomanAgaltsev/chaotic/source/file          # YAML rule files (
 go get github.com/RomanAgaltsev/chaotic/source/http          # admin HTTP endpoint
 ```
 
-The raw-`net.Conn` adapter (`adapter/net`) is its own module too, but it depends only on the standard library.
+The raw-`net.Conn` (`adapter/net`) and `io.Reader`/`io.Writer` (`adapter/io`) adapters are their own modules too, but they depend only on the standard library.
 
 Requires Go 1.26+.
 
@@ -95,6 +96,7 @@ Each adapter wraps one integration boundary and populates a stable, low-cardinal
 | RabbitMQ (amqp091) | `adapter/rabbitmq`: `WrapChannel(ch, eng)`, `WrapConnection(c, eng)` | `OpRabbitMQ` | routing key / queue | `publish` / `consume` | `exchange` / `queue` |
 | AWS SDK (v2) | `adapter/aws`: `AppendChaosMiddleware(&cfg, eng)` | `OpAWS` | `service.operation` | `request` | `service`, `operation`, `region` |
 | raw `net.Conn` | `adapter/net`: `WrapConn/WrapListener/WrapDialer` | `OpNet` | conn name / address | `read` / `write` / `dial` | `network` |
+| `io.Reader` / `io.Writer` | `adapter/io`: `WrapReader(r, eng)`, `WrapWriter(w, eng)` | `OpIO` | — | `read` / `write` | — |
 | explicit point | `chaos`: `Point(ctx, name)` | `OpExplicit` | the point name | — | caller-supplied |
 
 Keep custom attribute values low-cardinality: they can become metric labels, and unbounded values (raw SQL text, user IDs) blow up an observer's memory.
@@ -184,6 +186,17 @@ ln = chaosnet.WrapListener(ln, eng)        // faults accepted conns
 dialer := chaosnet.WrapDialer(eng, net.Dial) // faults at dial time
 ```
 
+### Raw io.Reader / io.Writer
+
+Wrap any stream — an HTTP response body, a file, a buffer — to inject the
+stream-shaping faults (`SlowReader`/`SlowWriter`/`Truncate`) or any ordinary
+fault:
+
+```go
+r = chaosio.WrapReader(resp.Body, eng) // throttle or truncate reads
+w = chaosio.WrapWriter(dst, eng)       // throttle or truncate writes
+```
+
 ### Explicit chaos points
 
 For places no adapter reaches — between two pure functions, inside a goroutine, at a state-machine transition — bind an engine to the context and drop a `chaos.Point`:
@@ -209,15 +222,20 @@ A point on a context with no engine (or a disabled engine) is a silent, allocati
 | `JitteredSeed(min, max, seed)` | seeded, reproducible jitter |
 | `Error(err)` | return `err` in the adapter's native error model |
 | `Panic(v)` | `panic(v)` through the wrapped call |
-| `ConnDrop()` | substitute the adapter's native connection-drop error (`driver.ErrBadConn`, gRPC `Unavailable`, …) |
+| `ConnDrop()` | substitute the adapter's native connection-drop error (`driver.ErrBadConn`, gRPC `Unavailable`, …); models a hard reset |
+| `Disconnect()` | substitute the adapter's native *orderly*-close error (a TCP FIN); distinct from `ConnDrop` because clients often handle a clean close and a hard reset differently |
 | `HTTPStatus(code, body…)` | make the HTTP adapters render a specific status |
 | `HeaderInject(key, value)` | set a header flowing toward the code under test |
 | `HeaderStrip(key)` | delete a header flowing toward the code under test |
 | `Clock(d)` | skew the clock observed through `engine.Now(ctx)` by `d`, to drive time-dependent logic (token/lease expiry, backoff) |
+| `SlowReader(rate)` / `SlowWriter(rate)` | throttle an `adapter/io`-wrapped stream to `rate` bytes/sec; `rate == 0` blocks until the context is done (a stream that never ends) |
+| `Truncate(n)` | cut an `adapter/io`-wrapped stream off after `n` bytes — a reader returns `io.EOF`, a writer `io.ErrShortWrite` |
 
 Attach one with `engine.WithFault(f)` or several (executed in order, short-circuiting on the first error) with `engine.WithFaults(f1, f2, …)`.
 
 `Clock` only moves the time returned by `engine.Now(ctx)`, not the OS clock — read `engine.Now(ctx)` instead of `time.Now()` in the code whose clock-dependent behavior you want to test.
+
+The stream-shaping faults (`SlowReader`/`SlowWriter`/`Truncate`) only take effect through the `adapter/io` reader/writer wrappers; on other adapters they are inert.
 
 ## Selecting which operations to hit
 
@@ -297,15 +315,26 @@ Config is an untrusted trust boundary, so `BuildRule` rejects absurd values (e.g
 
 ### From an admin HTTP endpoint
 
+The handler routes with an internal `http.ServeMux` rooted at `/`, so mount it behind `http.StripPrefix`:
+
 ```go
 // import srchttp "github.com/RomanAgaltsev/chaotic/source/http"
-mux.Handle("/chaos", srchttp.New(eng,
-    srchttp.WithWritable(true),                     // allow POST/PUT to install rules
+mux.Handle("/chaos/", http.StripPrefix("/chaos", srchttp.New(eng,
+    srchttp.WithWritable(true),                      // allow the mutating routes below
     srchttp.WithAuth(func(tok string) bool { ... }), // bearer-token gate
-))
+)))
 ```
 
-`GET` returns the current YAML document; `POST`/`PUT` installs a new one (read-only by default). Rules are swapped atomically via `Engine.ReplaceRules`, so in-flight evaluations never see a torn set.
+| Route | Effect |
+|-------|--------|
+| `GET /` | return the whole rule set as a YAML document |
+| `POST` / `PUT /` | replace the whole rule set (writable) |
+| `GET /rules` | list rule names with their hit counts |
+| `GET /rules/{name}/count` | return one rule's hit count |
+| `PUT /rules/{name}` | install a single rule from a `source/terms` string in the body (writable) |
+| `DELETE /rules/{name}` | remove one rule (writable) |
+
+Mutating routes are rejected unless `WithWritable(true)` is set. Rules are swapped atomically via `Engine.ReplaceRules`, so in-flight evaluations never see a torn set.
 
 ### From a one-line terms string
 
@@ -320,6 +349,17 @@ for _, r := range rules {
 ```
 
 A clause reads `name: <matchers>=<counter>*<faults>` — e.g. `2*error("payment down")` is `Times(2)` of `fault.Error`. See [`examples/terms-dsl`](examples/terms-dsl/).
+
+### From an environment variable
+
+`source/env` reads a `source/terms` string from an environment variable, so an already-built binary can be faulted at process start with no recompile:
+
+```go
+rs, err := env.FromEnv("CHAOTIC_RULES") // "" defaults to CHAOTIC_RULES
+eng := engine.New(engine.WithRuleSource(rs))
+```
+
+It never reads the environment in `init()` — the caller decides when and whether, keeping production opt-in. An unset or empty variable yields an empty rule set, so the engine stays a no-op. Pairs naturally with `engine.WithProductionGuard`.
 
 ## Observers
 
@@ -378,6 +418,7 @@ Runnable, tested scenarios live in [`examples/`](examples/). Each has a `main.go
 | [rabbitmq-publish-retry](examples/rabbitmq-publish-retry/) | a publisher retries through a transient RabbitMQ outage (needs Docker) | `adapter/rabbitmq` |
 | [aws-dynamodb-retry](examples/aws-dynamodb-retry/) | the AWS SDK's own retryer recovers from an injected outage | `adapter/aws` |
 | [net-conn-drop](examples/net-conn-drop/) | a read loop retries through a transient connection drop | `adapter/net` |
+| [slow-body-read](examples/slow-body-read/) | a `Truncate` fault cuts a response body mid-JSON; the reader surfaces a clean parse error | `adapter/io` |
 | [chaos-point](examples/chaos-point/) | an explicit `chaos.Point` guards a post-commit hook | `chaos` |
 | [clock-skew](examples/clock-skew/) | a token expires once `fault.Clock` skews `engine.Now` past its TTL | `fault.Clock` |
 | [terms-dsl](examples/terms-dsl/) | a one-line terms string activates chaos with no rule-building code | `source/terms` |
@@ -391,7 +432,7 @@ chaotic is a Go workspace (`go.work`) of several modules so consumers pull in on
 
 | Module | Contents | Third-party deps |
 |--------|----------|------------------|
-| `github.com/RomanAgaltsev/chaotic` | engine, faults, explicit points, terms DSL, test helpers (`chaostest` + `quick`/`golden`/`scenarios`/`property`/`bench`), HTTP / HTTP-server / SQL adapters | none (stdlib) |
+| `github.com/RomanAgaltsev/chaotic` | engine, faults, explicit points, terms DSL, `env` rule source, test helpers (`chaostest` + `quick`/`golden`/`scenarios`/`property`/`bench`), HTTP / HTTP-server / SQL adapters | none (stdlib) |
 | `…/adapter/grpc` | gRPC interceptors | `google.golang.org/grpc` |
 | `…/adapter/pgx` | native pgx v5 pool & conn wrappers | `github.com/jackc/pgx/v5` |
 | `…/adapter/redis` | go-redis v9 hook | `github.com/redis/go-redis/v9` |
@@ -401,6 +442,7 @@ chaotic is a Go workspace (`go.work`) of several modules so consumers pull in on
 | `…/adapter/rabbitmq` | amqp091-go channel & connection | `github.com/rabbitmq/amqp091-go` |
 | `…/adapter/aws` | aws-sdk-go-v2 middleware | `github.com/aws/aws-sdk-go-v2` |
 | `…/adapter/net` | raw `net.Conn` / `Listener` / `Dialer` | none (stdlib) |
+| `…/adapter/io` | `io.Reader` / `io.Writer` stream wrappers | none (stdlib) |
 | `…/observer/slog` · `/prometheus` · `/otel` | ready-made observers | respective backends |
 | `…/source/file` · `/http` | YAML rule files & admin endpoint | `gopkg.in/yaml.v3` |
 | `…/cmd/chaotic-points` | static-analysis CLI: discover points, gate rule configs | `golang.org/x/tools` |

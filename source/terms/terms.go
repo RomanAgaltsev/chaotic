@@ -88,10 +88,6 @@ func Parse(s string) ([]engine.RuleSpec, error) {
 
 func parseRule(s string) (engine.RuleSpec, error) {
 	var spec engine.RuleSpec
-	if strings.Contains(s, "->") {
-		return spec, fmt.Errorf("terms: %q: chained terms (\"->\") are not supported yet "+
-			"(staged faults pending, roadmap §10); use one term per rule", s)
-	}
 	// Optional "name:" prefix (top-level colon, before any '=').
 	if i := indexTop(s, ':'); i >= 0 {
 		spec.Name = strings.TrimSpace(s[:i])
@@ -108,6 +104,16 @@ func parseRule(s string) (engine.RuleSpec, error) {
 		if err := parseSelectors(sel, &spec); err != nil {
 			return spec, err
 		}
+	}
+	if segs := splitTopArrow(term); len(segs) > 1 {
+		for _, seg := range segs {
+			st, err := parseStageSegment(strings.TrimSpace(seg))
+			if err != nil {
+				return spec, err
+			}
+			spec.Stages = append(spec.Stages, st)
+		}
+		return spec, nil
 	}
 	if err := parseTerm(term, &spec); err != nil {
 		return spec, err
@@ -179,6 +185,66 @@ func parseTerm(s string, spec *engine.RuleSpec) error {
 		return err
 	}
 	return parseAction(strings.TrimSpace(name), args, spec)
+}
+
+// splitTopArrow splits s on every top-level "->" — depth 0, i.e. not inside
+// parentheses or a double-quoted string — mirroring splitTop's depth-awareness.
+func splitTopArrow(s string) []string {
+	var parts []string
+	depth, inStr, start := 0, false, 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case inStr:
+			if c == '"' {
+				inStr = false
+			}
+		case c == '"':
+			inStr = true
+		case c == '(':
+			depth++
+		case c == ')':
+			depth--
+		case depth == 0 && c == '-' && i+1 < len(s) && s[i+1] == '>':
+			parts = append(parts, s[start:i])
+			i++ // skip '>'
+			start = i + 1
+		}
+	}
+	return append(parts, s[start:])
+}
+
+// parseStageSegment parses one "[N*]action(args)" segment into a StageSpec. An
+// integer "N*" sets Times = N; no count sets Times = 0 (the forever final stage);
+// a "%" probability mode is rejected — stages advance by count, not probability.
+func parseStageSegment(s string) (engine.StageSpec, error) {
+	var stage engine.StageSpec
+	head := s
+	if p := strings.IndexByte(s, '('); p >= 0 {
+		head = s[:p]
+	}
+	if i := strings.IndexAny(head, "*%"); i >= 0 {
+		if s[i] == '%' {
+			return stage, fmt.Errorf("terms: probability mode %q not allowed in a staged term", s)
+		}
+		n, err := strconv.Atoi(strings.TrimSpace(s[:i]))
+		if err != nil {
+			return stage, fmt.Errorf("terms: bad stage count %q: %w", s[:i], err)
+		}
+		stage.Times = n
+		s = strings.TrimSpace(s[i+1:])
+	}
+	name, args, err := splitCall(s)
+	if err != nil {
+		return stage, err
+	}
+	// Reuse the single-term action mapping by parsing into a scratch spec.
+	var scratch engine.RuleSpec
+	if err := parseAction(strings.TrimSpace(name), args, &scratch); err != nil {
+		return stage, err
+	}
+	stage.Faults = scratch.Faults
+	return stage, nil
 }
 
 func parseAction(name, args string, spec *engine.RuleSpec) error {

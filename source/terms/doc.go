@@ -29,6 +29,9 @@
 // not substitute return values, so gofail's return is renamed error here.
 //
 // Limits: the DSL emits only the serializable RuleSpec subset — no MatchPredicate
-// and no typed errors. Term chaining ("a->b", staged faults) is not yet
-// supported; use one term per rule until engine.Staged lands.
+// and no typed errors.
+//
+// Staged faults: "term -> term -> ..." compiles to engine.WithStages. A leading
+// "N*" sets a stage's match count; the final stage may omit the count to fire
+// forever, e.g. 2*latency(200ms)->error("boom").
 package terms
