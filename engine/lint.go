@@ -157,6 +157,13 @@ func LintSpecs(specs []RuleSpec) Report {
 
 		broad := len(s.Kinds) == 0 && (s.NameGlob == "" || s.NameGlob == "*")
 		for _, fs := range s.Faults {
+			if (fs.Type == "slow_reader" || fs.Type == "slow_writer") && fs.Rate == 0 {
+				rep.Findings = append(rep.Findings, Finding{
+					Severity: SeverityWarn,
+					Rule:     name,
+					Message:  fmt.Sprintf("%s rate 0 blocks until context cancellation - a stream that never ends", fs.Type),
+				})
+			}
 			lintFault(name, broad, fs, &rep)
 		}
 		for _, st := range s.Stages {

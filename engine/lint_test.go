@@ -158,3 +158,14 @@ func TestLintSpecsBroadDisconnectIsHigh(t *testing.T) {
 		t.Fatal("a broad-scope disconnect should produce a High finding")
 	}
 }
+
+func TestLintSpecsZeroRateSlowWarns(t *testing.T) {
+	rep := LintSpecs([]RuleSpec{{
+		Name:   "hang",
+		Kinds:  []string{"io"},
+		Faults: []FaultSpec{{Type: "slow_reader", Rate: 0}},
+	}})
+	if !hasFinding(rep, SeverityWarn, "never ends") {
+		t.Fatalf("expected never-ends warning, got %+v", rep.Findings)
+	}
+}

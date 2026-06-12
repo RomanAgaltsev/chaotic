@@ -42,6 +42,8 @@ type FaultSpec struct {
 	Max      string `yaml:"max" json:"max"`           // jittered
 	Message  string `yaml:"message" json:"message"`   // error -> errors.New(Message)
 	Value    string `yaml:"value" json:"value"`       // panic -> Panic(value)
+	Rate     int    `yaml:"rate" json:"rate"`         // slow_reader / slow_writer (bytes/sec)
+	Limit    int    `yaml:"limit" json:"limit"`       // truncate (bytes)
 }
 
 // StageSpec is the serializable form of a Stage. Times == 0 in the final stage
@@ -212,6 +214,21 @@ func buildFault(fs FaultSpec) (fault.Fault, error) {
 		return fault.ConnDrop(), nil
 	case "disconnect":
 		return fault.Disconnect(), nil
+	case "slow_reader":
+		if fs.Rate < 0 {
+			return nil, fmt.Errorf("chaotic: slow_reader rate %d must be >= 0", fs.Rate)
+		}
+		return fault.SlowReader(fs.Rate), nil
+	case "slow_writer":
+		if fs.Rate < 0 {
+			return nil, fmt.Errorf("chaotic: slow_writer rate %d must be >= 0", fs.Rate)
+		}
+		return fault.SlowWriter(fs.Rate), nil
+	case "truncate":
+		if fs.Limit < 0 {
+			return nil, fmt.Errorf("chaotic: truncate limit %d must be >= 0", fs.Limit)
+		}
+		return fault.Truncate(fs.Limit), nil
 	}
 	return nil, fmt.Errorf("chaotic: unknown fault type %q", fs.Type)
 }
