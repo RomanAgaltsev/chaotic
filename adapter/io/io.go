@@ -105,12 +105,51 @@ func reportOutcome(ctx context.Context, action engine.Action, callErr error) {
 	_ = action.After(ctx)
 }
 
-// placeholders so the package compiles before Tasks C3-C4 fill them in.
-func (r *reader) shapeRead(_ *fault.StreamFaultError, b []byte) (int, error) { return r.inner.Read(b) }
-func (r *reader) cappedRead(b []byte) (int, error)                           { return r.inner.Read(b) }
-func (w *writer) shapeWrite(_ *fault.StreamFaultError, b []byte) (int, error) {
-	return w.inner.Write(b)
+func (r *reader) shapeRead(sfe *fault.StreamFaultError, b []byte) (int, error) {
+	switch sfe.Mode {
+	case fault.StreamTruncate:
+		r.cap.armed = true
+		r.cap.remaining = sfe.Limit
+		return r.cappedRead(b)
+	case fault.StreamSlowRead:
+		n, err := r.inner.Read(b)
+		slow(sfe.Rate, n)
+		return n, err
+	default: // SlowWrite on a reader: mismatch, shape nothing
+		return r.inner.Read(b)
+	}
 }
+
+func (r *reader) cappedRead(b []byte) (int, error) { return r.inner.Read(b) }
+
+func (w *writer) shapeWrite(sfe *fault.StreamFaultError, b []byte) (int, error) {
+	switch sfe.Mode {
+	case fault.StreamTruncate:
+		w.cap.armed = true
+		w.cap.remaining = sfe.Limit
+		return w.cappedWrite(b)
+	case fault.StreamSlowWrite:
+		n, err := w.inner.Write(b)
+		slow(sfe.Rate, n)
+		return n, err
+	default: // SlowRead on a writer: mismatch, shape nothing
+		return w.inner.Write(b)
+	}
+}
+
 func (w *writer) cappedWrite(b []byte) (int, error) { return w.inner.Write(b) }
+
+// slow sleeps for the time it takes to move n bytes at rate bytes/sec. rate == 0
+// blocks until the process exits (the "stream that never ends" fault); io has no
+// context to cancel against.
+func slow(rate, n int) {
+	if rate == 0 {
+		select {} // never returns
+	}
+	if n <= 0 {
+		return
+	}
+	time.Sleep(time.Duration(float64(n) / float64(rate) * float64(time.Second)))
+}
 
 var _ = time.Second // referenced once slow() lands in Task C3
