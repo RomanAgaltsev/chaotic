@@ -4,6 +4,7 @@ use (
 	.
 	./adapter/aws
 	./adapter/grpc
+	./adapter/io
 	./adapter/kafka
 	./adapter/mongo
 	./adapter/nats
