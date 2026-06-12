@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.26.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.25.0...v1.26.0) (2026-06-12)
+
+
+### Features
+
+* activation ergonomics ([040b8d2](https://github.com/RomanAgaltsev/chaotic/commit/040b8d2b678c2d8f92375e435435e8840ba33230))
+* **source/env:** build a RuleSet from an env var ([ab079f1](https://github.com/RomanAgaltsev/chaotic/commit/ab079f1393c532660ddfddf0df310ed7385a8862))
+* **source/http:** add GET /rules and /rules/{name}/count ([da4dd60](https://github.com/RomanAgaltsev/chaotic/commit/da4dd60d7bd89906718872c4feea599575c8a755))
+* **source/http:** add per-rule PUT/DELETE via terms body ([91c60d6](https://github.com/RomanAgaltsev/chaotic/commit/91c60d62d6a3dc659ff5e09e3c45c284d8f5b9cd))
+* **source/terms:** compile -&gt; chaining to staged faults ([e8b74b7](https://github.com/RomanAgaltsev/chaotic/commit/e8b74b72f427830860a933c10f8eb7b23f2d54cc))
+
+
+### Bug Fixes
+
+* fix linter issue (gosec) ([9a6aebb](https://github.com/RomanAgaltsev/chaotic/commit/9a6aebb4436c5b4d771b1bfc5afb7ec96c6cf2d7))
+
 ## [1.25.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.24.0...v1.25.0) (2026-06-12)
 
 
