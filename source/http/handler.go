@@ -14,6 +14,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -56,6 +57,8 @@ func New(eng *engine.Engine, opts ...Option) *Handler {
 	mux.HandleFunc("GET /{$}", h.getWhole)
 	mux.HandleFunc("POST /{$}", h.postWhole)
 	mux.HandleFunc("PUT /{$}", h.postWhole)
+	mux.HandleFunc("GET /rules", h.listRules)
+	mux.HandleFunc("GET /rules/{name}/count", h.ruleCount)
 	h.mux = mux
 	return h
 }
@@ -158,4 +161,33 @@ func (h *Handler) authorized(r *http.Request) bool {
 
 type ruleDoc struct {
 	Rules []engine.RuleSpec `yaml:"rules"`
+}
+
+func (h *Handler) listRules(w http.ResponseWriter, _ *http.Request) {
+	hits := h.eng.AllHits()
+	type item struct {
+		Name string `json:"name"`
+		Hits int    `json:"hits"`
+	}
+	h.mu.RLock()
+	out := make([]item, 0, len(h.order))
+	for _, name := range h.order {
+		out = append(out, item{Name: name, Hits: hits[name]})
+	}
+	h.mu.RUnlock()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(out)
+}
+
+func (h *Handler) ruleCount(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	h.mu.RLock()
+	_, ok := h.specs[name]
+	h.mu.RUnlock()
+	if !ok {
+		http.Error(w, "no such rule", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain")
+	_, _ = fmt.Fprintf(w, "%d\n", h.eng.Hits(name))
 }
