@@ -4,6 +4,7 @@ use (
 	.
 	./adapter/aws
 	./adapter/grpc
+	./adapter/io
 	./adapter/kafka
 	./adapter/mongo
 	./adapter/nats
@@ -21,6 +22,7 @@ use (
 	./examples/pgx-pool
 	./examples/rabbitmq-publish-retry
 	./examples/redis-cache-fallback
+	./examples/slow-body-read
 	./examples/terms-dsl
 	./observer/otel
 	./observer/prometheus

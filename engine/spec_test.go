@@ -164,3 +164,33 @@ func TestBuildFaultDisconnect(t *testing.T) {
 		t.Fatalf("faults = %v, want [KindDisconnect]", got)
 	}
 }
+
+func TestBuildFaultStream(t *testing.T) {
+	tests := []struct {
+		name string
+		fs   FaultSpec
+		kind fault.Kind
+	}{
+		{"slow_reader", FaultSpec{Type: "slow_reader", Rate: 1024}, fault.KindSlowReader},
+		{"slow_writer", FaultSpec{Type: "slow_writer", Rate: 512}, fault.KindSlowWriter},
+		{"truncate", FaultSpec{Type: "truncate", Limit: 8}, fault.KindTruncate},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, err := BuildRule(RuleSpec{Kinds: []string{"io"}, Faults: []FaultSpec{tt.fs}})
+			if err != nil {
+				t.Fatalf("BuildRule: %v", err)
+			}
+			if got := r.Info().Faults; len(got) != 1 || got[0] != tt.kind {
+				t.Fatalf("faults = %v, want [%v]", got, tt.kind)
+			}
+		})
+	}
+}
+
+func TestBuildFaultStreamNegativeRejected(t *testing.T) {
+	_, err := BuildRule(RuleSpec{Kinds: []string{"io"}, Faults: []FaultSpec{{Type: "slow_reader", Rate: -1}}})
+	if err == nil || !strings.Contains(err.Error(), "rate") {
+		t.Fatalf("err = %v, want a rate error", err)
+	}
+}
