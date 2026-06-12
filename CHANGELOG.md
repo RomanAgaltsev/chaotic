@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.0](https://github.com/ag4r/chaotic/compare/v1.22.0...v1.23.0) (2026-06-12)
+
+
+### Features
+
+* staged faults ([#63](https://github.com/ag4r/chaotic/issues/63)) ([c73b728](https://github.com/ag4r/chaotic/commit/c73b728487c39df623a0ffb0efc2e8ac003f5379))
+
 ## [1.22.0](https://github.com/ag4r/chaotic/compare/v1.21.0...v1.22.0) (2026-06-11)
 
 
