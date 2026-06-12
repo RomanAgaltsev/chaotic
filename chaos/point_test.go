@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ag4r/chaotic/chaos"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/chaos"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestWithEngineRoundTrips(t *testing.T) {

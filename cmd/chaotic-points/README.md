@@ -6,7 +6,7 @@ against typo'd point names, so a rule that targets a nonexistent point fails CI.
 
 ## Install
 
-go install github.com/ag4r/chaotic/cmd/chaotic-points@latest
+go install github.com/RomanAgaltsev/chaotic/cmd/chaotic-points@latest
 
 ## Usage
 

@@ -8,7 +8,7 @@ package nats
 import (
 	"time"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 	natsgo "github.com/nats-io/nats.go"
 )
 

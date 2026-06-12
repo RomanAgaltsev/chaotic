@@ -12,7 +12,7 @@
 ## Reporting a Vulnerability
 
 Please report security issues privately via GitHub's
-[private vulnerability reporting](https://github.com/ag4r/chaotic/security/advisories/new)
+[private vulnerability reporting](https://github.com/RomanAgaltsev/chaotic/security/advisories/new)
 ("Report a vulnerability" in the **Security** tab). Do not open public issues
 for security reports.
 

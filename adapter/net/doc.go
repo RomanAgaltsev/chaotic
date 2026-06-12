@@ -3,7 +3,7 @@
 // the raw byte boundary — chaos for anything that speaks TCP, without a
 // per-library adapter:
 //
-//	import chaosnet "github.com/ag4r/chaotic/adapter/net"
+//	import chaosnet "github.com/RomanAgaltsev/chaotic/adapter/net"
 //
 //	conn = chaosnet.WrapConn(conn, eng)             // fault Read/Write
 //	ln   = chaosnet.WrapListener(ln, eng)           // accepted conns auto-wrapped

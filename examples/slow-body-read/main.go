@@ -8,9 +8,9 @@ import (
 	"io"
 	"strings"
 
-	chaosio "github.com/ag4r/chaotic/adapter/io"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosio "github.com/RomanAgaltsev/chaotic/adapter/io"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // ReadBody reads the whole body from src through the engine. Returns the bytes

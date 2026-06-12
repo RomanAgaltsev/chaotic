@@ -12,9 +12,9 @@ import (
 	"net/http/httptest"
 	"os"
 
-	chaoshttp "github.com/ag4r/chaotic/adapter/http"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // newEngine wires every production bound. The failure budget stops injection

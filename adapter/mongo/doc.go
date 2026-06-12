@@ -4,7 +4,7 @@
 // and client) into its own types that consult the chaotic engine on each query
 // and write:
 //
-//	import chaosmongo "github.com/ag4r/chaotic/adapter/mongo"
+//	import chaosmongo "github.com/RomanAgaltsev/chaotic/adapter/mongo"
 //
 //	coll := client.Database("app").Collection("users")
 //	cc := chaosmongo.WrapCollection(coll, eng)

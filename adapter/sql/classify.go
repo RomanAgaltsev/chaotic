@@ -1,7 +1,7 @@
 package sql
 
 import (
-	"github.com/ag4r/chaotic/internal/sqlclass"
+	"github.com/RomanAgaltsev/chaotic/internal/sqlclass"
 )
 
 // classifySQL returns the first SQL verb in q, uppercased. Empty for

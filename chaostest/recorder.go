@@ -3,7 +3,7 @@ package chaostest
 import (
 	"sync"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Event is one observed engine decision. Fired distinguishes a RuleFired event

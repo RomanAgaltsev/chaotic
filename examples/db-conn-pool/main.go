@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	chaossql "github.com/ag4r/chaotic/adapter/sql"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaossql "github.com/RomanAgaltsev/chaotic/adapter/sql"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 type countingDriver struct{ opens atomic.Int64 }

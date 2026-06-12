@@ -6,7 +6,7 @@ package io
 import (
 	"io"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func WrapReader(r io.Reader, _ *engine.Engine) io.Reader { return r }

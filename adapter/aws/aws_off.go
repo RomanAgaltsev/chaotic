@@ -7,7 +7,7 @@ package aws
 import (
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Step and MiddlewareOptions mirror the chaos-on surface so callers compile

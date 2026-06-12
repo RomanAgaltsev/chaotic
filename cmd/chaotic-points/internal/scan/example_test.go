@@ -3,8 +3,8 @@ package scan_test
 import (
 	"fmt"
 
-	"github.com/ag4r/chaotic/cmd/chaotic-points/internal/scan"
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/cmd/chaotic-points/internal/scan"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func ExampleGate() {

@@ -1,11 +1,11 @@
-module github.com/ag4r/chaotic/adapter/redis
+module github.com/RomanAgaltsev/chaotic/adapter/redis
 
 go 1.26
 
 toolchain go1.26.4
 
 require (
-	github.com/ag4r/chaotic v0.0.0-00010101000000-000000000000
+	github.com/RomanAgaltsev/chaotic v0.0.0-00010101000000-000000000000
 	github.com/alicebob/miniredis/v2 v2.38.0
 	github.com/redis/go-redis/v9 v9.20.1
 )
@@ -18,4 +18,4 @@ require (
 	golang.org/x/sys v0.45.0 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..

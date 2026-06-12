@@ -1,12 +1,12 @@
-module github.com/ag4r/chaotic/examples/nats-request-retry
+module github.com/RomanAgaltsev/chaotic/examples/nats-request-retry
 
 go 1.26
 
 toolchain go1.26.4
 
 require (
-	github.com/ag4r/chaotic v0.0.0
-	github.com/ag4r/chaotic/adapter/nats v0.0.0
+	github.com/RomanAgaltsev/chaotic v0.0.0
+	github.com/RomanAgaltsev/chaotic/adapter/nats v0.0.0
 	github.com/nats-io/nats-server/v2 v2.14.2
 	github.com/nats-io/nats.go v1.52.0
 )
@@ -24,6 +24,6 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..
 
-replace github.com/ag4r/chaotic/adapter/nats => ../../adapter/nats
+replace github.com/RomanAgaltsev/chaotic/adapter/nats => ../../adapter/nats

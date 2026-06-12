@@ -1,10 +1,10 @@
-module github.com/ag4r/chaotic/examples/pgx-pool
+module github.com/RomanAgaltsev/chaotic/examples/pgx-pool
 
 go 1.26
 
 require (
-	github.com/ag4r/chaotic v0.0.0
-	github.com/ag4r/chaotic/adapter/pgx v0.0.0
+	github.com/RomanAgaltsev/chaotic v0.0.0
+	github.com/RomanAgaltsev/chaotic/adapter/pgx v0.0.0
 	github.com/jackc/pgx/v5 v5.10.0
 )
 
@@ -16,6 +16,6 @@ require (
 	golang.org/x/text v0.37.0 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..
 
-replace github.com/ag4r/chaotic/adapter/pgx => ../../adapter/pgx
+replace github.com/RomanAgaltsev/chaotic/adapter/pgx => ../../adapter/pgx

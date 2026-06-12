@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ag4r/chaotic/chaos"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/source/terms"
+	"github.com/RomanAgaltsev/chaotic/chaos"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/source/terms"
 )
 
 // Activate compiles a terms string and installs the rules on eng.

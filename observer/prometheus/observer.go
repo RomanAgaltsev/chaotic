@@ -5,7 +5,7 @@ package prometheus
 import (
 	"context"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

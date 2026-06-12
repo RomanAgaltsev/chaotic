@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	chaosio "github.com/ag4r/chaotic/adapter/io"
-	"github.com/ag4r/chaotic/engine"
+	chaosio "github.com/RomanAgaltsev/chaotic/adapter/io"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func TestZeroAllocUnderChaosOff(t *testing.T) {

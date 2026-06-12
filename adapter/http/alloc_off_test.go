@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	chaoshttp "github.com/ag4r/chaotic/adapter/http"
-	"github.com/ag4r/chaotic/engine"
+	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func TestZeroAllocUnderChaosOff(t *testing.T) {

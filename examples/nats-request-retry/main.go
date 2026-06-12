@@ -10,7 +10,7 @@ import (
 
 	natsgo "github.com/nats-io/nats.go"
 
-	chaosnats "github.com/ag4r/chaotic/adapter/nats"
+	chaosnats "github.com/RomanAgaltsev/chaotic/adapter/nats"
 )
 
 // RequestWithRetry sends a request, retrying up to attempts times with a short

@@ -10,8 +10,8 @@ import (
 
 	kafkago "github.com/segmentio/kafka-go"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func newWriter(fake kafkaWriter, eng *engine.Engine) *Writer {

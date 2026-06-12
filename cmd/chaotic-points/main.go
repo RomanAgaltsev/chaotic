@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ag4r/chaotic/cmd/chaotic-points/internal/scan"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/source/terms"
+	"github.com/RomanAgaltsev/chaotic/cmd/chaotic-points/internal/scan"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/source/terms"
 )
 
 func main() {

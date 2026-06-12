@@ -6,7 +6,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // WrapTransport returns rt unchanged under the chaos_off build tag

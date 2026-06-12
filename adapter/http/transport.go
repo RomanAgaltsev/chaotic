@@ -18,8 +18,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // WrapTransport returns a RoundTripper that consults eng on every request.

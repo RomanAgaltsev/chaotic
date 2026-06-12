@@ -6,8 +6,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

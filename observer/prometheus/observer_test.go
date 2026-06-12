@@ -8,9 +8,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
-	chaosprom "github.com/ag4r/chaotic/observer/prometheus"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
+	chaosprom "github.com/RomanAgaltsev/chaotic/observer/prometheus"
 )
 
 func counterValue(t *testing.T, reg *prometheus.Registry, name, rule string) float64 {

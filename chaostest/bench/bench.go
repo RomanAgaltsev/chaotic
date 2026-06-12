@@ -3,7 +3,7 @@ package bench
 import (
 	"testing"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Profile names and configures one chaos profile for a benchmark sub-run. Apply

@@ -1,11 +1,11 @@
-module github.com/ag4r/chaotic/observer/otel
+module github.com/RomanAgaltsev/chaotic/observer/otel
 
 go 1.26
 
 toolchain go1.26.4
 
 require (
-	github.com/ag4r/chaotic v0.0.0
+	github.com/RomanAgaltsev/chaotic v0.0.0
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/metric v1.44.0
 	go.opentelemetry.io/otel/sdk v1.44.0
@@ -22,4 +22,4 @@ require (
 	golang.org/x/sys v0.45.0 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestRuleInfoUnconstrainedForNoMatcherRule(t *testing.T) {

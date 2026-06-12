@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ag4r/chaotic/adapter/httpsrv"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/adapter/httpsrv"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func newEngine(t *testing.T, r engine.Rule) *engine.Engine {

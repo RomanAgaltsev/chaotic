@@ -9,7 +9,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func WrapConn(c net.Conn, _ *engine.Engine) net.Conn { return c }

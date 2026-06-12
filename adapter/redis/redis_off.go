@@ -5,7 +5,7 @@
 package redis
 
 import (
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 
 	goredis "github.com/redis/go-redis/v9"
 )

@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ag4r/chaotic/chaostest"
-	"github.com/ag4r/chaotic/chaostest/quick"
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/chaostest"
+	"github.com/RomanAgaltsev/chaotic/chaostest/quick"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func TestFailFirstFiresExactlyN(t *testing.T) {

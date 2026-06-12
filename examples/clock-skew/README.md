@@ -1,6 +1,6 @@
 # clock-skew
 
-Demonstrates [`fault.Clock`](https://pkg.go.dev/github.com/ag4r/chaotic/fault#Clock):
+Demonstrates [`fault.Clock`](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic/fault#Clock):
 a skewed wall clock observed through `engine.Now`.
 
 A token-expiry check reads the clock with `engine.Now(ctx)` instead of

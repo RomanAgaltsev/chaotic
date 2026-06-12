@@ -11,7 +11,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 
-	chaosmongo "github.com/ag4r/chaotic/adapter/mongo"
+	chaosmongo "github.com/RomanAgaltsev/chaotic/adapter/mongo"
 )
 
 // User is the document we read back.

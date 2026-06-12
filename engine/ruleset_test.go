@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestNewRuleSetBacksEngineViaWithRuleSource(t *testing.T) {

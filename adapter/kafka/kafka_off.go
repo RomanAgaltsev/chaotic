@@ -10,7 +10,7 @@ import (
 
 	kafkago "github.com/segmentio/kafka-go"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 type Writer struct {

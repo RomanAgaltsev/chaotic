@@ -3,7 +3,7 @@
 // single chaos middleware covers them all. Append it to your aws.Config and any
 // client built from that config consults the chaotic engine on each request:
 //
-//	import chaosaws "github.com/ag4r/chaotic/adapter/aws"
+//	import chaosaws "github.com/RomanAgaltsev/chaotic/adapter/aws"
 //
 //	cfg, _ := config.LoadDefaultConfig(ctx)
 //	chaosaws.AppendChaosMiddleware(&cfg, eng)

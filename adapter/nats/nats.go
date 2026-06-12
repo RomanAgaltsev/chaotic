@@ -10,8 +10,8 @@ import (
 
 	natsgo "github.com/nats-io/nats.go"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Conn wraps a *nats.Conn so the chaotic engine is consulted on each publish,

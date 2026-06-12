@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	chaosio "github.com/ag4r/chaotic/adapter/io"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosio "github.com/RomanAgaltsev/chaotic/adapter/io"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestReadPassThroughWhenNoRule(t *testing.T) {

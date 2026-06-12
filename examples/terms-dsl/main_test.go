@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ag4r/chaotic/chaos"
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/chaos"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func TestOneLinerActivatesChaos(t *testing.T) {

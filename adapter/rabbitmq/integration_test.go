@@ -11,9 +11,9 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	tcrabbitmq "github.com/testcontainers/testcontainers-go/modules/rabbitmq"
 
-	chaosrabbitmq "github.com/ag4r/chaotic/adapter/rabbitmq"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosrabbitmq "github.com/RomanAgaltsev/chaotic/adapter/rabbitmq"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestWrapperAgainstRealBroker(t *testing.T) {

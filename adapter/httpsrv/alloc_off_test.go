@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ag4r/chaotic/adapter/httpsrv"
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/adapter/httpsrv"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 type noopRW struct {

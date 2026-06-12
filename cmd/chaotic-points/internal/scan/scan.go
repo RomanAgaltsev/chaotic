@@ -14,7 +14,7 @@ import (
 )
 
 // chaosPkgPath is the import path whose Point/PointWith calls we discover.
-const chaosPkgPath = "github.com/ag4r/chaotic/chaos"
+const chaosPkgPath = "github.com/RomanAgaltsev/chaotic/chaos"
 
 // Point is one discovered chaos.Point / chaos.PointWith call site.
 type Point struct {

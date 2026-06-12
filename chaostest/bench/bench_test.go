@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ag4r/chaotic/chaostest/bench"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/chaostest/bench"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestRunIteratesProfilesResetsAndAppliesEachAndRunsBody(t *testing.T) {

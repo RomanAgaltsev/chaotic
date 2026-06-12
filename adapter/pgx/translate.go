@@ -5,7 +5,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // translate maps a fault-pipeline error into pgx's native error model.

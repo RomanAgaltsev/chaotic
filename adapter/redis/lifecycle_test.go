@@ -8,9 +8,9 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	chaosredis "github.com/ag4r/chaotic/adapter/redis"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosredis "github.com/RomanAgaltsev/chaotic/adapter/redis"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // A WithMaxConcurrent slot must be released after each command, or chaos

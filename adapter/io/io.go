@@ -8,8 +8,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // truncCap is the sticky byte cap a Truncate fault arms on a stream.

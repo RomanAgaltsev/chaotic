@@ -1,4 +1,4 @@
-module github.com/ag4r/chaotic
+module github.com/RomanAgaltsev/chaotic
 
 go 1.26
 

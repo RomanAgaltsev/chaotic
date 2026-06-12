@@ -7,5 +7,5 @@
 // Users typically alias this package to avoid colliding with the upstream
 // pgx package:
 //
-//	import chaospgx "github.com/ag4r/chaotic/adapter/pgx"
+//	import chaospgx "github.com/RomanAgaltsev/chaotic/adapter/pgx"
 package pgx

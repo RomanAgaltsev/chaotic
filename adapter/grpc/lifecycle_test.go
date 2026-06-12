@@ -6,9 +6,9 @@ import (
 	"context"
 	"testing"
 
-	chaosgrpc "github.com/ag4r/chaotic/adapter/grpc"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosgrpc "github.com/RomanAgaltsev/chaotic/adapter/grpc"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // A WithMaxConcurrent slot must be released after each unary call, or chaos

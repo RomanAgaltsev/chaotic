@@ -9,8 +9,8 @@ import (
 
 	kafkago "github.com/segmentio/kafka-go"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Writer wraps a *kafka.Writer so the chaotic engine is consulted on each

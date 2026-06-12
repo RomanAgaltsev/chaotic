@@ -5,8 +5,8 @@ package nats
 import (
 	"testing"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // A WithMaxConcurrent slot must be released after each publish, or chaos silently

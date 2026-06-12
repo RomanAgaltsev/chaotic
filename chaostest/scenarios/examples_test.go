@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ag4r/chaotic/chaostest/scenarios"
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/chaostest/scenarios"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func ExampleDatabaseOutageCascade() {

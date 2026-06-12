@@ -8,8 +8,8 @@ import (
 
 	kafkago "github.com/segmentio/kafka-go"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // A WithMaxConcurrent slot must be released after each write, or chaos silently

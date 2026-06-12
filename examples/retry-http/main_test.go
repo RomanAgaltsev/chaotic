@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	chaoshttp "github.com/ag4r/chaotic/adapter/http"
+	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
 )
 
 func TestRetryRecovers(t *testing.T) {

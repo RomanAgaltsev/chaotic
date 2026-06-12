@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // fire evaluates op against eng and returns the injected fault error (or nil),

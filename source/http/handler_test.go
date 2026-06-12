@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ag4r/chaotic/engine"
-	srchttp "github.com/ag4r/chaotic/source/http"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	srchttp "github.com/RomanAgaltsev/chaotic/source/http"
 )
 
 const sampleDoc = `rules:

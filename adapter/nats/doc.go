@@ -1,7 +1,7 @@
 // Package nats is a chaos adapter for github.com/nats-io/nats.go. nats.go has no
 // per-publish hook, so chaos arrives through two surfaces:
 //
-//	import chaosnats "github.com/ag4r/chaotic/adapter/nats"
+//	import chaosnats "github.com/RomanAgaltsev/chaotic/adapter/nats"
 //
 //	// Construction-time: a chaos dialer faults Dial/reconnect (the ConnDrop story).
 //	nc, _ := nats.Connect(url, chaosnats.Option(eng))
