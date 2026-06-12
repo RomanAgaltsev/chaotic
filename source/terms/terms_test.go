@@ -123,13 +123,6 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 
-func TestParseRejectsChaining(t *testing.T) {
-	_, err := Parse(`2*latency(200ms)->error("boom")`)
-	if err == nil {
-		t.Fatal("Parse should reject '->' chaining in v1")
-	}
-}
-
 func TestCompileProducesUsableRule(t *testing.T) {
 	rules, err := Compile(`flaky: kind(http_client)=2*error("upstream 503")`)
 	if err != nil {
@@ -166,5 +159,59 @@ func TestCompileRejectsInvalidSpec(t *testing.T) {
 	// Bad duration is caught by BuildRule.
 	if _, err := Compile(`latency(not_a_duration)`); err == nil {
 		t.Fatal("Compile should reject a bad duration via BuildRule")
+	}
+}
+
+func TestParseStagedChaining(t *testing.T) {
+	specs, err := Parse(`flaky: kind(http_client)=2*latency(200ms)->error("boom")`)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(specs) != 1 {
+		t.Fatalf("got %d specs, want 1", len(specs))
+	}
+	st := specs[0].Stages
+	if len(st) != 2 {
+		t.Fatalf("got %d stages, want 2", len(st))
+	}
+	if st[0].Times != 2 || len(st[0].Faults) != 1 || st[0].Faults[0].Type != "latency" {
+		t.Fatalf("stage 0 = %+v", st[0])
+	}
+	if st[1].Times != 0 || st[1].Faults[0].Type != "error" {
+		t.Fatalf("stage 1 = %+v (want Times 0, error)", st[1])
+	}
+}
+
+func TestParseStagedThreeStages(t *testing.T) {
+	specs, err := Parse(`2*latency(10ms)->1*error("x")->conndrop`)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	st := specs[0].Stages
+	if len(st) != 3 || st[0].Times != 2 || st[1].Times != 1 || st[2].Times != 0 {
+		t.Fatalf("stages = %+v", st)
+	}
+}
+
+func TestParseArrowInsideQuotesNotSplit(t *testing.T) {
+	specs, err := Parse(`kind(sql)=error("a->b")`)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(specs[0].Stages) != 0 || len(specs[0].Faults) != 1 {
+		t.Fatalf("a quoted -> must not stage: stages=%v faults=%v", specs[0].Stages, specs[0].Faults)
+	}
+}
+
+func TestParseStagedRejectsPercentMode(t *testing.T) {
+	if _, err := Parse(`50%error("x")->conndrop`); err == nil {
+		t.Fatal("a probability mode in a staged term should error")
+	}
+}
+
+func TestCompileStagedNonFinalNeedsCount(t *testing.T) {
+	// A non-final stage without a count is invalid; BuildRule (via Compile) rejects it.
+	if _, err := Compile(`latency(10ms)->error("x")`); err == nil {
+		t.Fatal("non-final stage with no count should fail BuildRule")
 	}
 }
