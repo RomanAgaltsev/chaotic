@@ -10,8 +10,8 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // firstKey returns a best-effort key for an Op's Attrs. go-redis stores the

@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
-	chaosslog "github.com/ag4r/chaotic/observer/slog"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
+	chaosslog "github.com/RomanAgaltsev/chaotic/observer/slog"
 )
 
 func ExampleNew() {

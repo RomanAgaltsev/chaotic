@@ -6,8 +6,8 @@ import (
 	"context"
 	"testing"
 
-	chaosgrpc "github.com/ag4r/chaotic/adapter/grpc"
-	"github.com/ag4r/chaotic/engine"
+	chaosgrpc "github.com/RomanAgaltsev/chaotic/adapter/grpc"
+	"github.com/RomanAgaltsev/chaotic/engine"
 	"google.golang.org/grpc"
 )
 

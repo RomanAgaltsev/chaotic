@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // lintLatencyCeiling is the latency above which LintSpecs warns: a single

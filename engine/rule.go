@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // RuleOption configures a Rule during construction.

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ag4r/chaotic/chaostest"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/chaostest"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestRecorderCapturesFiresAndSkips(t *testing.T) {

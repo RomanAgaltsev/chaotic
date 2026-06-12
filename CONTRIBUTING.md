@@ -1,7 +1,7 @@
 # Contributing to chaotic
 
 Thanks for contributing! This repo is a multi-module Go workspace
-(`go.work`): the root module `github.com/ag4r/chaotic` plus submodules under
+(`go.work`): the root module `github.com/RomanAgaltsev/chaotic` plus submodules under
 `adapter/`, `observer/`, and `source/`.
 
 ## Prerequisites
@@ -56,8 +56,8 @@ A submodule that depends on the root module must not ship the dev-time
 release PR:
 
 1. Ensure the **root** module is released at `vX.Y.Z`.
-2. In the submodule's `go.mod`, set `require github.com/ag4r/chaotic vX.Y.Z`
-   and **remove** the `replace github.com/ag4r/chaotic => ../..` line.
+2. In the submodule's `go.mod`, set `require github.com/RomanAgaltsev/chaotic vX.Y.Z`
+   and **remove** the `replace github.com/RomanAgaltsev/chaotic => ../..` line.
 3. Confirm local dev still resolves via `go.work` (not `replace`).
 4. Run `task ci`, then merge the submodule release PR.
 

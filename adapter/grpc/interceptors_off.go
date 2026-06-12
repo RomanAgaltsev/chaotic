@@ -6,7 +6,7 @@ package grpc
 import (
 	"context"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 	"google.golang.org/grpc"
 )
 

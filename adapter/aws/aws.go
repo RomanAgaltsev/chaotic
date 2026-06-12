@@ -12,8 +12,8 @@ import (
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/smithy-go/middleware"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // chaosMiddlewareID is the smithy middleware ID under which the chaos is

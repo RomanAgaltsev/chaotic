@@ -6,7 +6,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestTranslateNil(t *testing.T) {

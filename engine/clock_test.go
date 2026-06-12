@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestNowWithoutSkew(t *testing.T) {

@@ -10,9 +10,9 @@ import (
 	natsserver "github.com/nats-io/nats-server/v2/test"
 	natsgo "github.com/nats-io/nats.go"
 
-	chaosnats "github.com/ag4r/chaotic/adapter/nats"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosnats "github.com/RomanAgaltsev/chaotic/adapter/nats"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestWrapperAgainstInProcessServer(t *testing.T) {

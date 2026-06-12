@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 	"gopkg.in/yaml.v3"
 )
 

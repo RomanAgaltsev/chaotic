@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // New returns an engine that resets itself when t finishes.

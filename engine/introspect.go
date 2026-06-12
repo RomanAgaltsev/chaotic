@@ -1,6 +1,6 @@
 package engine
 
-import "github.com/ag4r/chaotic/fault"
+import "github.com/RomanAgaltsev/chaotic/fault"
 
 // CounterKind classifies a rule's counter for introspection.
 type CounterKind int

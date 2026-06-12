@@ -1,11 +1,11 @@
 # chaotic
 
-[![test](https://github.com/ag4r/chaotic/actions/workflows/test.yml/badge.svg)](https://github.com/ag4r/chaotic/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/ag4r/chaotic/branch/main/graph/badge.svg)](https://codecov.io/gh/ag4r/chaotic)
-[![Go Reference](https://pkg.go.dev/badge/github.com/ag4r/chaotic.svg)](https://pkg.go.dev/github.com/ag4r/chaotic)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ag4r/chaotic)](https://goreportcard.com/report/github.com/ag4r/chaotic)
-[![Release](https://img.shields.io/github/v/release/ag4r/chaotic)](https://github.com/ag4r/chaotic/releases)
-[![License: MIT](https://img.shields.io/github/license/ag4r/chaotic)](./LICENSE)
+[![test](https://github.com/RomanAgaltsev/chaotic/actions/workflows/test.yml/badge.svg)](https://github.com/RomanAgaltsev/chaotic/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/RomanAgaltsev/chaotic/branch/main/graph/badge.svg)](https://codecov.io/gh/RomanAgaltsev/chaotic)
+[![Go Reference](https://pkg.go.dev/badge/github.com/RomanAgaltsev/chaotic.svg)](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic)
+[![Go Report Card](https://goreportcard.com/badge/github.com/RomanAgaltsev/chaotic)](https://goreportcard.com/report/github.com/RomanAgaltsev/chaotic)
+[![Release](https://img.shields.io/github/v/release/RomanAgaltsev/chaotic)](https://github.com/RomanAgaltsev/chaotic/releases)
+[![License: MIT](https://img.shields.io/github/license/RomanAgaltsev/chaotic)](./LICENSE)
 
 **In-process chaos engineering for Go.** Wrap your integration boundaries — `http.RoundTripper`, `net/http` middleware, `database/sql` driver, gRPC interceptors, `pgx` pool, Redis, Kafka, NATS, MongoDB, RabbitMQ, the AWS SDK, and raw `net.Conn` — and inject latency, errors, panics, connection drops, clock skew, and HTTP faults on demand. When no rules are configured the wrappers are near-zero-cost passthroughs, so chaotic is safe to leave linked everywhere. For a hard guarantee, the `chaos_off` build tag compiles every wrapper down to a bare passthrough.
 
@@ -35,25 +35,25 @@ chaostest.AssertHits(t, eng, "transient-failure", 2)
 ## Install
 
 ```bash
-go get github.com/ag4r/chaotic
+go get github.com/RomanAgaltsev/chaotic
 ```
 
 The core module ships the engine, faults, the terms DSL, and the stdlib adapters (HTTP client, HTTP server, `database/sql`, raw `net.Conn`). Integrations that pull in third-party dependencies are separate modules — install the ones you need:
 
 ```bash
-go get github.com/ag4r/chaotic/adapter/grpc         # gRPC interceptors
-go get github.com/ag4r/chaotic/adapter/pgx          # jackc/pgx v5 pool & conn
-go get github.com/ag4r/chaotic/adapter/redis        # redis/go-redis v9 hook
-go get github.com/ag4r/chaotic/adapter/kafka        # segmentio/kafka-go writer & reader
-go get github.com/ag4r/chaotic/adapter/nats         # nats.go connection
-go get github.com/ag4r/chaotic/adapter/mongo        # mongo-driver v2 collection/db/client
-go get github.com/ag4r/chaotic/adapter/rabbitmq     # amqp091-go channel & connection
-go get github.com/ag4r/chaotic/adapter/aws          # aws-sdk-go-v2 middleware
-go get github.com/ag4r/chaotic/observer/slog        # slog observer
-go get github.com/ag4r/chaotic/observer/prometheus  # Prometheus metrics
-go get github.com/ag4r/chaotic/observer/otel        # OpenTelemetry
-go get github.com/ag4r/chaotic/source/file          # YAML rule files (live reload)
-go get github.com/ag4r/chaotic/source/http          # admin HTTP endpoint
+go get github.com/RomanAgaltsev/chaotic/adapter/grpc         # gRPC interceptors
+go get github.com/RomanAgaltsev/chaotic/adapter/pgx          # jackc/pgx v5 pool & conn
+go get github.com/RomanAgaltsev/chaotic/adapter/redis        # redis/go-redis v9 hook
+go get github.com/RomanAgaltsev/chaotic/adapter/kafka        # segmentio/kafka-go writer & reader
+go get github.com/RomanAgaltsev/chaotic/adapter/nats         # nats.go connection
+go get github.com/RomanAgaltsev/chaotic/adapter/mongo        # mongo-driver v2 collection/db/client
+go get github.com/RomanAgaltsev/chaotic/adapter/rabbitmq     # amqp091-go channel & connection
+go get github.com/RomanAgaltsev/chaotic/adapter/aws          # aws-sdk-go-v2 middleware
+go get github.com/RomanAgaltsev/chaotic/observer/slog        # slog observer
+go get github.com/RomanAgaltsev/chaotic/observer/prometheus  # Prometheus metrics
+go get github.com/RomanAgaltsev/chaotic/observer/otel        # OpenTelemetry
+go get github.com/RomanAgaltsev/chaotic/source/file          # YAML rule files (live reload)
+go get github.com/RomanAgaltsev/chaotic/source/http          # admin HTTP endpoint
 ```
 
 The raw-`net.Conn` adapter (`adapter/net`) is its own module too, but it depends only on the standard library.
@@ -262,7 +262,7 @@ A worked example wiring all of these together lives in [`examples/prod-safety-ra
 The [`cmd/chaotic-points`](cmd/chaotic-points/) CLI is the static-analysis companion: it discovers `chaos.Point` / `chaos.PointWith` call sites in a module and gates a rules config against typo'd explicit-point names, so a rule targeting `checkout.afterCommt` is caught before it silently never fires.
 
 ```bash
-go run github.com/ag4r/chaotic/cmd/chaotic-points lint --rules chaos.json ./...
+go run github.com/RomanAgaltsev/chaotic/cmd/chaotic-points lint --rules chaos.json ./...
 ```
 
 ## Config-driven rules (no recompile)
@@ -298,7 +298,7 @@ Config is an untrusted trust boundary, so `BuildRule` rejects absurd values (e.g
 ### From an admin HTTP endpoint
 
 ```go
-// import srchttp "github.com/ag4r/chaotic/source/http"
+// import srchttp "github.com/RomanAgaltsev/chaotic/source/http"
 mux.Handle("/chaos", srchttp.New(eng,
     srchttp.WithWritable(true),                     // allow POST/PUT to install rules
     srchttp.WithAuth(func(tok string) bool { ... }), // bearer-token gate
@@ -383,7 +383,7 @@ Runnable, tested scenarios live in [`examples/`](examples/). Each has a `main.go
 | [terms-dsl](examples/terms-dsl/) | a one-line terms string activates chaos with no rule-building code | `source/terms` |
 | [prod-safety-rails](examples/prod-safety-rails/) | failure budget + caps + guard + kill switch bound the blast radius | `engine` |
 
-Per-symbol godoc examples live next to each package on [pkg.go.dev](https://pkg.go.dev/github.com/ag4r/chaotic).
+Per-symbol godoc examples live next to each package on [pkg.go.dev](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic).
 
 ## Repository layout
 
@@ -391,7 +391,7 @@ chaotic is a Go workspace (`go.work`) of several modules so consumers pull in on
 
 | Module | Contents | Third-party deps |
 |--------|----------|------------------|
-| `github.com/ag4r/chaotic` | engine, faults, explicit points, terms DSL, test helpers (`chaostest` + `quick`/`golden`/`scenarios`/`property`/`bench`), HTTP / HTTP-server / SQL adapters | none (stdlib) |
+| `github.com/RomanAgaltsev/chaotic` | engine, faults, explicit points, terms DSL, test helpers (`chaostest` + `quick`/`golden`/`scenarios`/`property`/`bench`), HTTP / HTTP-server / SQL adapters | none (stdlib) |
 | `…/adapter/grpc` | gRPC interceptors | `google.golang.org/grpc` |
 | `…/adapter/pgx` | native pgx v5 pool & conn wrappers | `github.com/jackc/pgx/v5` |
 | `…/adapter/redis` | go-redis v9 hook | `github.com/redis/go-redis/v9` |

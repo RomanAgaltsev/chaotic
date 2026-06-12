@@ -3,8 +3,8 @@ package pgx
 import (
 	"strconv"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/internal/sqlclass"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/internal/sqlclass"
 )
 
 // boolStr returns "true" or "false".

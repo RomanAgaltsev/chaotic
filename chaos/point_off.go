@@ -7,7 +7,7 @@ package chaos
 import (
 	"context"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // WithEngine returns ctx unchanged under the chaos_off build tag.

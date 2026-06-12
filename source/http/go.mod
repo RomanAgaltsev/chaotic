@@ -1,10 +1,10 @@
-module github.com/ag4r/chaotic/source/http
+module github.com/RomanAgaltsev/chaotic/source/http
 
 go 1.26
 
 toolchain go1.26.4
 
-require github.com/ag4r/chaotic v0.0.0
+require github.com/RomanAgaltsev/chaotic v0.0.0
 
 require (
 	github.com/kr/pretty v0.3.1 // indirect
@@ -13,4 +13,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..

@@ -2,7 +2,7 @@
 // the hook returned by NewHook on any go-redis client and the chaotic engine
 // is consulted on every command, on every pipeline, and on dial:
 //
-//	import chaosredis "github.com/ag4r/chaotic/adapter/redis"
+//	import chaosredis "github.com/RomanAgaltsev/chaotic/adapter/redis"
 //
 //	rc := redis.NewClient(opts)
 //	rc.AddHook(chaosredis.NewHook(eng))

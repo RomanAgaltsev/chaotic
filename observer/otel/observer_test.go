@@ -11,9 +11,9 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
-	chaosotel "github.com/ag4r/chaotic/observer/otel"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
+	chaosotel "github.com/RomanAgaltsev/chaotic/observer/otel"
 )
 
 func TestObserverRecordsFires(t *testing.T) {

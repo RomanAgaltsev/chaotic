@@ -3,7 +3,7 @@
 Runnable, tested scenarios. Each directory has a `main.go` (`go run .`), a
 `main_test.go` (`go test ./...`), and a `README.md`. Per-symbol godoc examples
 live next to each package (see the `Example*` functions on
-[pkg.go.dev](https://pkg.go.dev/github.com/ag4r/chaotic)).
+[pkg.go.dev](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic)).
 
 | Scenario | Demonstrates | Adapter |
 |----------|--------------|---------|

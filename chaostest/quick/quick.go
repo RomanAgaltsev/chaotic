@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // FailFirst adds a rule that returns err on the first n matches of kind,

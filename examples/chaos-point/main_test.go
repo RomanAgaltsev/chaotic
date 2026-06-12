@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ag4r/chaotic/chaos"
+	"github.com/RomanAgaltsev/chaotic/chaos"
 )
 
 func TestRetrySurvivesInjectedFault(t *testing.T) {

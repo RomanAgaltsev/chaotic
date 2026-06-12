@@ -7,9 +7,9 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	goredis "github.com/redis/go-redis/v9"
 
-	chaosredis "github.com/ag4r/chaotic/adapter/redis"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosredis "github.com/RomanAgaltsev/chaotic/adapter/redis"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestCacheFallsBackWhenRedisDrops(t *testing.T) {

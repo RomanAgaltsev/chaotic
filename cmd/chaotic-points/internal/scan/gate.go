@@ -4,7 +4,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Finding is one gating problem: a rule references an explicit-point name that

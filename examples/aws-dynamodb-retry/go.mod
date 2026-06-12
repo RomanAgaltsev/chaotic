@@ -1,12 +1,12 @@
-module github.com/ag4r/chaotic/examples/aws-dynamodb-retry
+module github.com/RomanAgaltsev/chaotic/examples/aws-dynamodb-retry
 
 go 1.26
 
 toolchain go1.26.4
 
 require (
-	github.com/ag4r/chaotic v0.0.0
-	github.com/ag4r/chaotic/adapter/aws v0.0.0
+	github.com/RomanAgaltsev/chaotic v0.0.0
+	github.com/RomanAgaltsev/chaotic/adapter/aws v0.0.0
 	github.com/aws/aws-sdk-go-v2 v1.42.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.24
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.59.0
@@ -20,6 +20,6 @@ require (
 	github.com/aws/smithy-go v1.27.2 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..
 
-replace github.com/ag4r/chaotic/adapter/aws => ../../adapter/aws
+replace github.com/RomanAgaltsev/chaotic/adapter/aws => ../../adapter/aws

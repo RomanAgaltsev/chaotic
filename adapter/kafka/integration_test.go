@@ -11,9 +11,9 @@ import (
 	kafkago "github.com/segmentio/kafka-go"
 	tckafka "github.com/testcontainers/testcontainers-go/modules/kafka"
 
-	chaoskafka "github.com/ag4r/chaotic/adapter/kafka"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaoskafka "github.com/RomanAgaltsev/chaotic/adapter/kafka"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestWrapperAgainstRealKafka(t *testing.T) {

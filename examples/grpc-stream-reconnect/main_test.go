@@ -5,7 +5,7 @@ package main
 import (
 	"testing"
 
-	chaosgrpc "github.com/ag4r/chaotic/adapter/grpc"
+	chaosgrpc "github.com/RomanAgaltsev/chaotic/adapter/grpc"
 )
 
 func TestStreamReconnects(t *testing.T) {

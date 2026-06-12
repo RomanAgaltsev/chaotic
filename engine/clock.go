@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Now returns the current wall-clock time skewed by any fault.Clock active on

@@ -11,9 +11,9 @@ import (
 
 	pgxpool "github.com/jackc/pgx/v5/pgxpool"
 
-	chaospgx "github.com/ag4r/chaotic/adapter/pgx"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaospgx "github.com/RomanAgaltsev/chaotic/adapter/pgx"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func newEngine() *engine.Engine {

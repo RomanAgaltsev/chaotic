@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Stage is one phase of a staged rule: Times consecutive matches that inject

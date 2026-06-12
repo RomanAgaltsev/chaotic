@@ -6,7 +6,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Observer logs chaos rule fires (info) and skips (debug) to a slog.Logger.

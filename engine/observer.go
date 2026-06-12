@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Skip reasons passed to Observer.RuleSkipped. Observers may switch on these

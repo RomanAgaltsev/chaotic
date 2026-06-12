@@ -10,9 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
-	chaosaws "github.com/ag4r/chaotic/adapter/aws"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosaws "github.com/RomanAgaltsev/chaotic/adapter/aws"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestGetItemSurvivesOutageViaSDKRetry(t *testing.T) {

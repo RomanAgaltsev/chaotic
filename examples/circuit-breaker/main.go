@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	chaoshttp "github.com/ag4r/chaotic/adapter/http"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 var errBreakerOpen = errors.New("circuit breaker open")

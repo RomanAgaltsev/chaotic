@@ -4,9 +4,9 @@ import (
 	"net"
 	"testing"
 
-	chaosnet "github.com/ag4r/chaotic/adapter/net"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosnet "github.com/RomanAgaltsev/chaotic/adapter/net"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestReadRetrySurvivesDrop(t *testing.T) {

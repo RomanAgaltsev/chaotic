@@ -3,8 +3,8 @@ package scenarios
 import (
 	"time"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Option tunes a scenario. The same three options apply to every scenario;

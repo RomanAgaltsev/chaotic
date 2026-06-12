@@ -1,12 +1,12 @@
-module github.com/ag4r/chaotic/examples/rabbitmq-publish-retry
+module github.com/RomanAgaltsev/chaotic/examples/rabbitmq-publish-retry
 
 go 1.26
 
 toolchain go1.26.4
 
 require (
-	github.com/ag4r/chaotic v0.0.0
-	github.com/ag4r/chaotic/adapter/rabbitmq v0.0.0
+	github.com/RomanAgaltsev/chaotic v0.0.0
+	github.com/RomanAgaltsev/chaotic/adapter/rabbitmq v0.0.0
 	github.com/rabbitmq/amqp091-go v1.11.0
 	github.com/testcontainers/testcontainers-go/modules/rabbitmq v0.42.0
 )
@@ -65,6 +65,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..
 
-replace github.com/ag4r/chaotic/adapter/rabbitmq => ../../adapter/rabbitmq
+replace github.com/RomanAgaltsev/chaotic/adapter/rabbitmq => ../../adapter/rabbitmq

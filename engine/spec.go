@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // RuleSpec is the declarative, serializable form of a Rule. Rule sources parse

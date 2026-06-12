@@ -9,9 +9,9 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	chaosmongo "github.com/ag4r/chaotic/adapter/mongo"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosmongo "github.com/RomanAgaltsev/chaotic/adapter/mongo"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func TestReadRetrySurvivesFailover(t *testing.T) {

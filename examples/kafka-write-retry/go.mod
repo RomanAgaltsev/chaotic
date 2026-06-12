@@ -1,12 +1,12 @@
-module github.com/ag4r/chaotic/examples/kafka-write-retry
+module github.com/RomanAgaltsev/chaotic/examples/kafka-write-retry
 
 go 1.26
 
 toolchain go1.26.4
 
 require (
-	github.com/ag4r/chaotic v0.0.0
-	github.com/ag4r/chaotic/adapter/kafka v0.0.0
+	github.com/RomanAgaltsev/chaotic v0.0.0
+	github.com/RomanAgaltsev/chaotic/adapter/kafka v0.0.0
 	github.com/segmentio/kafka-go v0.4.51
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.42.0
 )
@@ -67,6 +67,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..
 
-replace github.com/ag4r/chaotic/adapter/kafka => ../../adapter/kafka
+replace github.com/RomanAgaltsev/chaotic/adapter/kafka => ../../adapter/kafka

@@ -3,7 +3,7 @@
 // adapter wraps them into its own types that consult the chaotic engine on each
 // read, fetch, commit, and write:
 //
-//	import chaoskafka "github.com/ag4r/chaotic/adapter/kafka"
+//	import chaoskafka "github.com/RomanAgaltsev/chaotic/adapter/kafka"
 //
 //	r := kafka.NewReader(kafka.ReaderConfig{Brokers: brokers, Topic: "events", GroupID: "g"})
 //	cr := chaoskafka.WrapReader(r, eng)

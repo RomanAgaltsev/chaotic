@@ -3,7 +3,7 @@
 // (and, for open-time faults, the connection) into its own types that consult the
 // chaotic engine on each publish, consume, and ack/nack:
 //
-//	import chaosrabbitmq "github.com/ag4r/chaotic/adapter/rabbitmq"
+//	import chaosrabbitmq "github.com/RomanAgaltsev/chaotic/adapter/rabbitmq"
 //
 //	conn, _ := amqp.Dial(url)
 //	cc := chaosrabbitmq.WrapConnection(conn, eng)

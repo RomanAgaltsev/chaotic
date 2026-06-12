@@ -5,4 +5,4 @@
 
 ### Features
 
-* points analyzer ([#59](https://github.com/ag4r/chaotic/issues/59)) ([2389608](https://github.com/ag4r/chaotic/commit/2389608363835ded17102331e9c83e8c208c2f98))
+* points analyzer ([#59](https://github.com/RomanAgaltsev/chaotic/issues/59)) ([2389608](https://github.com/RomanAgaltsev/chaotic/commit/2389608363835ded17102331e9c83e8c208c2f98))

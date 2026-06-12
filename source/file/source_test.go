@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/source/file"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/source/file"
 )
 
 func TestParseBuildsRuleSet(t *testing.T) {

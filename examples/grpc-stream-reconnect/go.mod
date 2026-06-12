@@ -1,10 +1,10 @@
-module github.com/ag4r/chaotic/examples/grpc-stream-reconnect
+module github.com/RomanAgaltsev/chaotic/examples/grpc-stream-reconnect
 
 go 1.26
 
 require (
-	github.com/ag4r/chaotic v0.0.0
-	github.com/ag4r/chaotic/adapter/grpc v0.0.0
+	github.com/RomanAgaltsev/chaotic v0.0.0
+	github.com/RomanAgaltsev/chaotic/adapter/grpc v0.0.0
 	google.golang.org/grpc v1.81.1
 )
 
@@ -19,6 +19,6 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
-replace github.com/ag4r/chaotic => ../..
+replace github.com/RomanAgaltsev/chaotic => ../..
 
-replace github.com/ag4r/chaotic/adapter/grpc => ../../adapter/grpc
+replace github.com/RomanAgaltsev/chaotic/adapter/grpc => ../../adapter/grpc

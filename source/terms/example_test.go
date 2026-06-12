@@ -3,7 +3,7 @@ package terms_test
 import (
 	"fmt"
 
-	"github.com/ag4r/chaotic/source/terms"
+	"github.com/RomanAgaltsev/chaotic/source/terms"
 )
 
 func ExampleCompile() {

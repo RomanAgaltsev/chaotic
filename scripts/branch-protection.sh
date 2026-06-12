@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Apply branch protection + merge settings to ag4r/chaotic.
+# Apply branch protection + merge settings to RomanAgaltsev/chaotic.
 # Requires: gh auth login (admin on the repo).
 set -euo pipefail
 
-REPO="ag4r/chaotic"
+REPO="RomanAgaltsev/chaotic"
 
 # Repo merge strategy: squash-only, linear history.
 gh api -X PATCH "repos/${REPO}" \

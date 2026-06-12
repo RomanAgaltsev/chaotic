@@ -11,9 +11,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	chaosgrpc "github.com/ag4r/chaotic/adapter/grpc"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaosgrpc "github.com/RomanAgaltsev/chaotic/adapter/grpc"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // newEngine fails only the first stream open, then becomes inert.

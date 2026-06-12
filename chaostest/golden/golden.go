@@ -47,8 +47,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // goldenEvent is one serialized engine decision. Fired distinguishes a fire

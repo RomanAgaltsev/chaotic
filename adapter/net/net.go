@@ -8,8 +8,8 @@ import (
 	"io"
 	"net"
 
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Conn wraps a net.Conn so the chaotic engine is consulted on each Read and

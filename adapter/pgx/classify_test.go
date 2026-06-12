@@ -3,7 +3,7 @@ package pgx
 import (
 	"testing"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func TestOpQueryBuildsExpectedOp(t *testing.T) {

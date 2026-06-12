@@ -3,7 +3,7 @@ package fixture
 import (
 	"context"
 
-	chaos "github.com/ag4r/chaotic/chaos"
+	chaos "github.com/RomanAgaltsev/chaotic/chaos"
 )
 
 const namedConst = "order.beforeShip"

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // hasSeverity reports whether rep contains at least one finding at sev.

@@ -4,6 +4,6 @@ go 1.26
 
 toolchain go1.26.4
 
-require github.com/ag4r/chaotic v0.0.0
+require github.com/RomanAgaltsev/chaotic v0.0.0
 
-replace github.com/ag4r/chaotic => ../../../../../..
+replace github.com/RomanAgaltsev/chaotic => ../../../../../..

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ag4r/chaotic/fault"
+	"github.com/RomanAgaltsev/chaotic/fault"
 	pgxv5 "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/ag4r/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Conn wraps either a *pgxpool.Conn (from Pool.Acquire) or a *pgx.Conn

@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	chaoshttp "github.com/ag4r/chaotic/adapter/http"
-	"github.com/ag4r/chaotic/engine"
-	"github.com/ag4r/chaotic/fault"
+	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func newEngine(t *testing.T, r engine.Rule) *engine.Engine {
