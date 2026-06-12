@@ -147,21 +147,26 @@ func LintSpecs(specs []RuleSpec) Report {
 
 		broad := len(s.Kinds) == 0 && (s.NameGlob == "" || s.NameGlob == "*")
 		for _, fs := range s.Faults {
-			if d, ok := specLatency(fs); ok && d > lintLatencyCeiling {
-				rep.Findings = append(rep.Findings, Finding{
-					Severity: SeverityWarn,
-					Rule:     name,
-					Message: fmt.Sprintf(
-						"latency %s exceeds the %s ceiling", d, lintLatencyCeiling),
-				})
+			lintFault(name, broad, fs, &rep)
+		}
+		for _, st := range s.Stages {
+			for _, fs := range st.Faults {
+				lintFault(name, broad, fs, &rep)
 			}
-			if broad && (fs.Type == "panic" || fs.Type == "conn_drop") {
-				rep.Findings = append(rep.Findings, Finding{
-					Severity: SeverityHigh,
-					Rule:     name,
-					Message: fmt.Sprintf(
-						"injects %s with no kind or name scope (matches everything)", fs.Type),
-				})
+		}
+		if len(s.Stages) > 0 {
+			last := s.Stages[len(s.Stages)-1]
+			if last.Times == 0 {
+				for _, fs := range last.Faults {
+					if fs.Type == "panic" || fs.Type == "conn_drop" || fs.Type == "error" {
+						rep.Findings = append(rep.Findings, Finding{
+							Severity: SeverityWarn,
+							Rule:     name,
+							Message: fmt.Sprintf(
+								"staged rule fails permanently after its transient stages (open-ended final stage injects %s)", fs.Type),
+						})
+					}
+				}
 			}
 		}
 	}
@@ -211,4 +216,23 @@ func specSignature(s RuleSpec) string {
 	kinds := append([]string(nil), s.Kinds...)
 	sort.Strings(kinds)
 	return strings.Join(kinds, ",") + "|" + s.NameGlob
+}
+
+// lintFault appends the latency-ceiling and terminal-on-broad-scope findings for
+// a single fault spec. Shared by the flat-faults and staged-faults passes.
+func lintFault(name string, broad bool, fs FaultSpec, rep *Report) {
+	if d, ok := specLatency(fs); ok && d > lintLatencyCeiling {
+		rep.Findings = append(rep.Findings, Finding{
+			Severity: SeverityWarn,
+			Rule:     name,
+			Message:  fmt.Sprintf("latency %s exceeds the %s ceiling", d, lintLatencyCeiling),
+		})
+	}
+	if broad && (fs.Type == "panic" || fs.Type == "conn_drop") {
+		rep.Findings = append(rep.Findings, Finding{
+			Severity: SeverityHigh,
+			Rule:     name,
+			Message:  fmt.Sprintf("injects %s with no kind or name scope (matches everything)", fs.Type),
+		})
+	}
 }

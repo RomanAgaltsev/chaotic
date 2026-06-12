@@ -142,15 +142,22 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 		if !r.matches(ctx, op) {
 			continue
 		}
-		fire := false
+		var fire bool
+		var faults []fault.Fault
 		switch {
 		case r.sticky != nil && r.sticky.sticky(op):
-			fire = true
+			fire, faults = true, r.faults
+		case r.staged != nil:
+			fire, faults = r.staged.fire()
 		case r.counter.shouldFire():
-			fire = true
+			fire, faults = true, r.faults
 			if r.sticky != nil {
 				r.sticky.mark(op)
 			}
+		}
+		if !fire {
+			e.notifySkip(r.name, op, ReasonCounter)
+			continue
 		}
 		if !fire {
 			e.notifySkip(r.name, op, ReasonCounter)
@@ -178,7 +185,7 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 			release = rel
 		}
 		e.recordHit(r.name)
-		act := &ruleAction{faults: r.faults, eng: e, op: op, release: release, name: r.name}
+		act := &ruleAction{faults: faults, eng: e, op: op, release: release, name: r.name}
 		if e.observer != nil && r.name != "" {
 			e.observer.RuleFired(r.name, op, act)
 		}

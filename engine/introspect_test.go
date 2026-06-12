@@ -67,3 +67,27 @@ func TestRuleInfoCounterKind(t *testing.T) {
 		})
 	}
 }
+
+func TestRuleInfoStaged(t *testing.T) {
+	r := NewRule(
+		MatchKind(OpHTTPClient),
+		WithStages(
+			Stage{Times: 1, Faults: []fault.Fault{fault.Latency(time.Millisecond)}},
+			Stage{Times: 0, Faults: []fault.Fault{fault.ConnDrop()}},
+		),
+	).Named("staged")
+
+	info := r.Info()
+	if info.Counter != CounterStaged {
+		t.Fatalf("Counter = %v, want CounterStaged", info.Counter)
+	}
+	want := []fault.Kind{fault.KindLatency, fault.KindConnDrop}
+	if len(info.Faults) != len(want) {
+		t.Fatalf("Faults = %v, want %v", info.Faults, want)
+	}
+	for i := range want {
+		if info.Faults[i] != want[i] {
+			t.Fatalf("Faults[%d] = %v, want %v", i, info.Faults[i], want[i])
+		}
+	}
+}

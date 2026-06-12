@@ -12,6 +12,7 @@ const (
 	CounterRange
 	CounterProbability
 	CounterSequence
+	CounterStaged
 )
 
 // RuleInfo is a read-only view of a Rule for linting and tooling. It exposes
@@ -26,6 +27,20 @@ type RuleInfo struct {
 
 // Info returns a RuleInfo describing r.
 func (r Rule) Info() RuleInfo {
+	if r.staged != nil {
+		fi := make([]fault.Kind, 0)
+		for _, st := range r.staged.stages {
+			for _, f := range st.Faults {
+				fi = append(fi, fault.KindOf(f))
+			}
+		}
+		return RuleInfo{
+			Name:          r.name,
+			Unconstrained: len(r.matchers) == 0,
+			Counter:       CounterStaged,
+			Faults:        fi,
+		}
+	}
 	fi := make([]fault.Kind, 0, len(r.faults))
 	for _, f := range r.faults {
 		fi = append(fi, fault.KindOf(f))

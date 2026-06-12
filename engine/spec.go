@@ -19,6 +19,7 @@ type RuleSpec struct {
 	Attrs    map[string]string `yaml:"attrs" json:"attrs"`
 	Counter  CounterSpec       `yaml:"counter" json:"counter"`
 	Faults   []FaultSpec       `yaml:"faults" json:"faults"`
+	Stages   []StageSpec       `yaml:"stages" json:"stages"`
 }
 
 // CounterSpec selects a counter. Type is "always", "times", "range", or
@@ -41,6 +42,13 @@ type FaultSpec struct {
 	Max      string `yaml:"max" json:"max"`           // jittered
 	Message  string `yaml:"message" json:"message"`   // error -> errors.New(Message)
 	Value    string `yaml:"value" json:"value"`       // panic -> Panic(value)
+}
+
+// StageSpec is the serializable form of a Stage. Times == 0 in the final stage
+// means "forever".
+type StageSpec struct {
+	Times  int         `yaml:"times" json:"times"`
+	Faults []FaultSpec `yaml:"faults" json:"faults"`
 }
 
 var kindNames = map[string]Kind{
@@ -117,6 +125,38 @@ func BuildRule(spec RuleSpec) (Rule, error) {
 	}
 	if len(faults) > 0 {
 		opts = append(opts, WithFaults(faults...))
+	}
+
+	if len(spec.Stages) > 0 {
+		if spec.Counter.Type != "" && spec.Counter.Type != "always" {
+			errs = append(errs, errors.New("chaotic: stages cannot be combined with a counter"))
+		}
+		if len(spec.Faults) > 0 {
+			errs = append(errs, errors.New("chaotic: stages cannot be combined with top-level faults"))
+		}
+		stages := make([]Stage, 0, len(spec.Stages))
+		for i, ss := range spec.Stages {
+			last := i == len(spec.Stages)-1
+			if !last && ss.Times <= 0 {
+				errs = append(errs, fmt.Errorf("chaotic: stage %d: only the final stage may have Times <= 0", i))
+			}
+			if last && ss.Times < 0 {
+				errs = append(errs, errors.New("chaotic: final stage Times must be >= 0"))
+			}
+			sf := make([]fault.Fault, 0, len(ss.Faults))
+			for _, fs := range ss.Faults {
+				f, err := buildFault(fs)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
+				sf = append(sf, f)
+			}
+			stages = append(stages, Stage{Times: ss.Times, Faults: sf})
+		}
+		if len(errs) == 0 {
+			opts = append(opts, WithStages(stages...))
+		}
 	}
 
 	if len(errs) > 0 {

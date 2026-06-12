@@ -2,6 +2,7 @@ package engine
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/ag4r/chaotic/fault"
@@ -11,6 +12,15 @@ import (
 func hasSeverity(rep Report, sev Severity) bool {
 	for _, f := range rep.Findings {
 		if f.Severity == sev {
+			return true
+		}
+	}
+	return false
+}
+
+func hasFinding(rep Report, sev Severity, substr string) bool {
+	for _, f := range rep.Findings {
+		if f.Severity == sev && strings.Contains(f.Message, substr) {
 			return true
 		}
 	}
@@ -111,5 +121,30 @@ func TestLintSpecsPassesWellScopedSpec(t *testing.T) {
 	rep := LintSpecs(specs)
 	if len(rep.Findings) != 0 {
 		t.Fatalf("expected an empty report for a well-scoped spec, got %+v", rep.Findings)
+	}
+}
+
+func TestLintSpecsOpenEndedTerminalStageWarns(t *testing.T) {
+	rep := LintSpecs([]RuleSpec{{
+		Name:  "degrade",
+		Kinds: []string{"http_client"},
+		Stages: []StageSpec{
+			{Times: 2, Faults: []FaultSpec{{Type: "latency", Duration: "10ms"}}},
+			{Times: 0, Faults: []FaultSpec{{Type: "conn_drop"}}},
+		},
+	}})
+	if !hasFinding(rep, SeverityWarn, "fails permanently") {
+		t.Fatalf("expected open-ended-terminal warning, got %+v", rep.Findings)
+	}
+}
+
+func TestLintSpecsStageFaultsFlowThroughChecks(t *testing.T) {
+	// Broad scope (no kind, no glob) + a panic stage fault => High, same as a flat rule.
+	rep := LintSpecs([]RuleSpec{{
+		Name:   "boom",
+		Stages: []StageSpec{{Times: 0, Faults: []FaultSpec{{Type: "panic", Value: "x"}}}},
+	}})
+	if rep.OK() {
+		t.Fatal("broad-scope panic stage fault should produce a High finding")
 	}
 }

@@ -154,3 +154,23 @@ func ExampleWithPerRuleRateLimit() {
 	fmt.Println(eng.Enabled())
 	// Output: true
 }
+
+func ExampleWithStages() {
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpHTTPClient),
+		engine.WithStages(
+			engine.Stage{Times: 2, Faults: []fault.Fault{fault.Error(errors.New("transient"))}},
+			engine.Stage{Times: 0, Faults: []fault.Fault{fault.Error(errors.New("permanent"))}},
+		),
+	).Named("degrade"))
+
+	op := engine.Op{Kind: engine.OpHTTPClient, Name: "/users"}
+	for i := 1; i <= 4; i++ {
+		fmt.Printf("call %d: %v\n", i, fire(eng, op))
+	}
+	// Output:
+	// call 1: transient
+	// call 2: transient
+	// call 3: permanent
+	// call 4: permanent
+}

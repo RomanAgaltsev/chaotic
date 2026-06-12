@@ -86,3 +86,66 @@ func TestBuildRuleReportsAllErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildRuleStagesRoundTrip(t *testing.T) {
+	spec := RuleSpec{
+		Name:  "flaky",
+		Kinds: []string{"http_client"},
+		Stages: []StageSpec{
+			{Times: 2, Faults: []FaultSpec{{Type: "latency", Duration: "0s"}}},
+			{Times: 0, Faults: []FaultSpec{{Type: "error", Message: "down"}}},
+		},
+	}
+	r, err := BuildRule(spec)
+	if err != nil {
+		t.Fatalf("BuildRule: %v", err)
+	}
+	if r.staged == nil {
+		t.Fatal("built rule should be staged")
+	}
+	// match 1-2: latency (nil error); match 3+: error.
+	if _, f := r.staged.fire(); len(f) != 1 {
+		t.Fatalf("stage 1 faults = %v", f)
+	}
+	r.staged.fire()                           // match 2
+	if _, f := r.staged.fire(); len(f) != 1 { // match 3
+		t.Fatal("stage 2 should have the error fault")
+	}
+}
+
+func TestBuildRuleStagesValidationErrors(t *testing.T) {
+	tests := []struct {
+		name string
+		spec RuleSpec
+		want string
+	}{
+		{
+			"stages_with_counter",
+			RuleSpec{Stages: []StageSpec{{Times: 0}}, Counter: CounterSpec{Type: "times", N: 1}},
+			"cannot be combined with a counter",
+		},
+		{
+			"stages_with_faults",
+			RuleSpec{Stages: []StageSpec{{Times: 0}}, Faults: []FaultSpec{{Type: "conn_drop"}}},
+			"cannot be combined with top-level faults",
+		},
+		{
+			"nonfinal_zero",
+			RuleSpec{Stages: []StageSpec{{Times: 0}, {Times: 1}}},
+			"only the final stage",
+		},
+		{
+			"bad_stage_fault",
+			RuleSpec{Stages: []StageSpec{{Times: 0, Faults: []FaultSpec{{Type: "nope"}}}}},
+			"unknown fault type",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := BuildRule(tt.spec)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("err = %v, want containing %q", err, tt.want)
+			}
+		})
+	}
+}

@@ -24,6 +24,7 @@ type Rule struct {
 	faults      []fault.Fault
 	sticky      *stickyTracker
 	rateLimiter *tokenBucket
+	staged      *stagedCounter // set by WithStages; nil for ordinary rules
 }
 
 type matcher func(ctx context.Context, op Op) bool
