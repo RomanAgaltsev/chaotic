@@ -86,6 +86,7 @@ func (*legacyStmt) NumInput() int { return 0 }
 func (*legacyStmt) Exec([]driver.Value) (driver.Result, error) {
 	return nil, errStub
 }
+
 func (s *legacyStmt) Query([]driver.Value) (driver.Rows, error) {
 	s.queryCalls++
 	return nil, errStub
