@@ -85,6 +85,13 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, translateError(req.URL, err)
 	}
 	resp, err := t.wrapped.RoundTrip(req)
+	if err == nil && resp != nil {
+		if rr, ok := action.(engine.ResultReporter); ok {
+			if m, ok := rr.Result(ctx, resp).(*http.Response); ok && m != nil {
+				resp = m
+			}
+		}
+	}
 	reportOutcome(ctx, action, err)
 	_ = action.After(ctx)
 	return resp, err
