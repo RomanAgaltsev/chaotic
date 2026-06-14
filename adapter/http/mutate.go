@@ -17,6 +17,6 @@ func MutateResponse(fn func(*http.Response) *http.Response) fault.Fault {
 		if !ok {
 			return v
 		}
-		return fn(resp)
+		return fn(resp) //nolint:bodyclose // fn returns the response onward for the caller to consume and close; closing it here would break the round-trip contract
 	})
 }

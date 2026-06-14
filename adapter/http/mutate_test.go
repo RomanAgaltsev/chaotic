@@ -23,7 +23,7 @@ func (s stubRT) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, s.err
 	}
 	return &http.Response{
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Header:     make(http.Header),
 		Body:       io.NopCloser(strings.NewReader(s.body)),
 		Request:    req,
@@ -38,15 +38,16 @@ func ruleEngine(f func(*http.Response) *http.Response) *engine.Engine {
 }
 
 func TestMutateResponseRewritesStatus(t *testing.T) {
-	eng := ruleEngine(func(r *http.Response) *http.Response { r.StatusCode = 503; return r })
+	eng := ruleEngine(func(r *http.Response) *http.Response { r.StatusCode = http.StatusServiceUnavailable; return r })
 	rt := chaoshttp.WrapTransport(stubRT{body: "ok"}, eng)
-	req, _ := http.NewRequest("GET", "http://example.test/x", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://example.test/x", nil)
 	resp, err := rt.RoundTrip(req)
 	if err != nil {
 		t.Fatalf("RoundTrip: %v", err)
 	}
-	if resp.StatusCode != 503 {
-		t.Fatalf("StatusCode = %d, want 503", resp.StatusCode)
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("StatusCode = %d, want %d", resp.StatusCode, http.StatusServiceUnavailable)
 	}
 }
 
@@ -56,8 +57,9 @@ func TestMutateResponseRewritesBody(t *testing.T) {
 		return r
 	})
 	rt := chaoshttp.WrapTransport(stubRT{body: `{"ok":true}`}, eng)
-	req, _ := http.NewRequest("GET", "http://example.test/x", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://example.test/x", nil)
 	resp, _ := rt.RoundTrip(req)
+	defer func() { _ = resp.Body.Close() }()
 	got, _ := io.ReadAll(resp.Body)
 	if string(got) != `{"corrupt":true}` {
 		t.Fatalf("body = %s", got)
@@ -68,8 +70,8 @@ func TestMutateResponseErrorPathUntouched(t *testing.T) {
 	called := false
 	eng := ruleEngine(func(r *http.Response) *http.Response { called = true; return r })
 	rt := chaoshttp.WrapTransport(stubRT{err: io.ErrUnexpectedEOF}, eng)
-	req, _ := http.NewRequest("GET", "http://example.test/x", nil)
-	if _, err := rt.RoundTrip(req); err == nil {
+	req, _ := http.NewRequest(http.MethodGet, "http://example.test/x", nil)
+	if _, err := rt.RoundTrip(req); err == nil { //nolint:bodyclose // transport error path returns a nil response
 		t.Fatal("expected transport error")
 	}
 	if called {
