@@ -44,9 +44,10 @@ type RichObserver interface {
 }
 
 // FaultEvent describes a single injected fault delivered to RichObserver. It is
-// emitted only for faults whose Apply returns without error (latency, jittered,
-// and any custom no-op fault); faults that short-circuit the call (error, panic,
-// connection drop) never produce a FaultEvent.
+// emitted for faults whose Apply returns without error (latency, jittered, any
+// custom no-op fault) and for result mutators (fault.ResponseMutate) after they
+// run post-call; faults that short-circuit the call (error, panic, connection
+// drop) never produce a FaultEvent.
 type FaultEvent struct {
 	Rule      string
 	Op        Op
