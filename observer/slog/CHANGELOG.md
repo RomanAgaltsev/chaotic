@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/RomanAgaltsev/chaotic/compare/observer/slog/v1.3.0...observer/slog/v1.3.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* review issues ([#12](https://github.com/RomanAgaltsev/chaotic/issues/12)) ([9939928](https://github.com/RomanAgaltsev/chaotic/commit/99399289f5e255b9088c07e7fe4bfa10083d4f51))
+
 ## [1.3.0](https://github.com/RomanAgaltsev/chaotic/compare/observer/slog/v1.2.0...observer/slog/v1.3.0) (2026-06-12)
 
 

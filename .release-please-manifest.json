@@ -1,5 +1,5 @@
 {
-  ".": "1.28.0",
+  ".": "1.28.1",
   "adapter/aws": "1.1.0",
   "adapter/grpc": "1.8.0",
   "adapter/io": "1.0.0",
@@ -7,13 +7,13 @@
   "adapter/mongo": "1.1.0",
   "adapter/nats": "1.1.0",
   "adapter/net": "1.2.0",
-  "adapter/pgx": "1.2.0",
+  "adapter/pgx": "1.2.1",
   "adapter/rabbitmq": "1.1.0",
   "adapter/redis": "1.1.0",
-  "cmd/chaotic-points": "1.1.0",
+  "cmd/chaotic-points": "1.1.1",
   "observer/otel": "1.2.0",
   "observer/prometheus": "1.3.0",
-  "observer/slog": "1.3.0",
+  "observer/slog": "1.3.1",
   "source/file": "1.0.0",
   "source/http": "1.1.0"
 }
