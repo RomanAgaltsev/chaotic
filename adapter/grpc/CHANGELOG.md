@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/RomanAgaltsev/chaotic/compare/adapter/grpc/v1.7.0...adapter/grpc/v1.8.0) (2026-06-15)
+
+
+### Features
+
+* response mutate ([33e1884](https://github.com/RomanAgaltsev/chaotic/commit/33e188489511fc85a7a3b3118c242ab98fbc69e6))
+
 ## [1.7.0](https://github.com/RomanAgaltsev/chaotic/compare/adapter/grpc/v1.6.0...adapter/grpc/v1.7.0) (2026-06-12)
 
 

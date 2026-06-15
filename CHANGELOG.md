@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.27.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.26.0...v1.27.0) (2026-06-15)
+
+
+### Features
+
+* response mutate ([33e1884](https://github.com/RomanAgaltsev/chaotic/commit/33e188489511fc85a7a3b3118c242ab98fbc69e6))
+
 ## [1.26.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.25.0...v1.26.0) (2026-06-12)
 
 
