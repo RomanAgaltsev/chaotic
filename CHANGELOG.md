@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.27.0...v1.28.0) (2026-06-15)
+
+
+### Features
+
+* **chaostest:** add Enable terms-string test helper ([bfe0884](https://github.com/RomanAgaltsev/chaotic/commit/bfe088493b7f82a0d40918dcb267470acb977394))
+
 ## [1.27.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.26.0...v1.27.0) (2026-06-15)
 
 
