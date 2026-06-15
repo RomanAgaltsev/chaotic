@@ -48,7 +48,10 @@ func run(obs engine.Observer) error {
 	defer srv.Close()
 
 	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, eng)}
-	_, err := client.Get(srv.URL)
+	resp, err := client.Get(srv.URL)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
 	return err
 }
 
