@@ -385,6 +385,7 @@ Ready-made observers live in their own modules so the core stays dependency-free
 The `chaostest` package and its subpackages integrate with `testing.TB`:
 
 - **`chaostest.New(t, opts…)`** — a fresh engine bound to `t.Cleanup`, so faults never leak between tests (safe with `t.Parallel`).
+- **`chaostest.Enable(t, eng, terms)`** — add rules from a one-line [terms string](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic/source/terms) and auto-reset them on `t.Cleanup`; returns the rule names for `AssertHits`. The gofail-style one-liner.
 - **`chaostest.AssertHits(t, eng, name, want)`** / **`AssertEventsExhausted(t, eng)`** — assert a named rule fired exactly *N* times, or that every configured rule fired at least once.
 - **`chaostest/quick`** — one-liners for the common setups: `FailFirst`, `SlowAlways`, `PanicOnce`.
 - **`chaostest/golden`** — record a fault fire-sequence from one run (`go test -chaos-update-golden`) and `Replay` it deterministically to turn a flaky CI failure into a reproducible local one.
@@ -427,6 +428,13 @@ Runnable, tested scenarios live in [`examples/`](examples/). Each has a `main.go
 | [fanout-partial-failure](examples/fanout-partial-failure/) | a fan-out degrades to a partial result when one branch is faulted | `adapter/http`
 
 Per-symbol godoc examples live next to each package on [pkg.go.dev](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic).
+
+## Cookbook
+
+The [cookbook](cookbook/) answers "How do I test that…?" — each recipe maps a
+resilience question to the rule shape and the runnable example that proves it,
+including [migrate-from-failpoint](cookbook/migrate-from-failpoint.md) and
+[migrate-from-gofail](cookbook/migrate-from-gofail.md) guides.
 
 ## Repository layout
 
