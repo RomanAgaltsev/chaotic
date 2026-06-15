@@ -38,7 +38,7 @@ chaostest.AssertHits(t, eng, "transient-failure", 2)
 go get github.com/RomanAgaltsev/chaotic
 ```
 
-The core module ships the engine, faults, the terms DSL, and the stdlib adapters (HTTP client, HTTP server, `database/sql`, raw `net.Conn`). Integrations that pull in third-party dependencies are separate modules — install the ones you need:
+The core module ships the engine, faults, the terms DSL, and the stdlib adapters (HTTP client, HTTP server, `database/sql`). Integrations that pull in third-party dependencies are separate modules — install the ones you need:
 
 ```bash
 go get github.com/RomanAgaltsev/chaotic/adapter/grpc         # gRPC interceptors
@@ -49,6 +49,7 @@ go get github.com/RomanAgaltsev/chaotic/adapter/nats         # nats.go connectio
 go get github.com/RomanAgaltsev/chaotic/adapter/mongo        # mongo-driver v2 collection/db/client
 go get github.com/RomanAgaltsev/chaotic/adapter/rabbitmq     # amqp091-go channel & connection
 go get github.com/RomanAgaltsev/chaotic/adapter/aws          # aws-sdk-go-v2 middleware
+go get github.com/RomanAgaltsev/chaotic/adapter/net          # raw net.Conn / Listener / Dialer
 go get github.com/RomanAgaltsev/chaotic/adapter/io           # io.Reader / io.Writer stream faults
 go get github.com/RomanAgaltsev/chaotic/observer/slog        # slog observer
 go get github.com/RomanAgaltsev/chaotic/observer/prometheus  # Prometheus metrics
@@ -227,6 +228,7 @@ A point on a context with no engine (or a disabled engine) is a silent, allocati
 | `HTTPStatus(code, body…)` | make the HTTP adapters render a specific status |
 | `HeaderInject(key, value)` | set a header flowing toward the code under test |
 | `HeaderStrip(key)` | delete a header flowing toward the code under test |
+| `ResponseMutate(fn)` | run `fn` on a *successful* call's result to corrupt or rewrite it (HTTP client response, gRPC unary reply); prefer the typed `adapter/http.MutateResponse` / `adapter/grpc.MutateReply` helpers |
 | `Clock(d)` | skew the clock observed through `engine.Now(ctx)` by `d`, to drive time-dependent logic (token/lease expiry, backoff) |
 | `SlowReader(rate)` / `SlowWriter(rate)` | throttle an `adapter/io`-wrapped stream to `rate` bytes/sec; `rate == 0` blocks until the context is done (a stream that never ends) |
 | `Truncate(n)` | cut an `adapter/io`-wrapped stream off after `n` bytes — a reader returns `io.EOF`, a writer `io.ErrShortWrite` |
@@ -385,6 +387,7 @@ Ready-made observers live in their own modules so the core stays dependency-free
 The `chaostest` package and its subpackages integrate with `testing.TB`:
 
 - **`chaostest.New(t, opts…)`** — a fresh engine bound to `t.Cleanup`, so faults never leak between tests (safe with `t.Parallel`).
+- **`chaostest.Enable(t, eng, terms)`** — add rules from a one-line [terms string](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic/source/terms) and auto-reset them on `t.Cleanup`; returns the rule names for `AssertHits`. The gofail-style one-liner.
 - **`chaostest.AssertHits(t, eng, name, want)`** / **`AssertEventsExhausted(t, eng)`** — assert a named rule fired exactly *N* times, or that every configured rule fired at least once.
 - **`chaostest/quick`** — one-liners for the common setups: `FailFirst`, `SlowAlways`, `PanicOnce`.
 - **`chaostest/golden`** — record a fault fire-sequence from one run (`go test -chaos-update-golden`) and `Replay` it deterministically to turn a flaky CI failure into a reproducible local one.
@@ -419,12 +422,22 @@ Runnable, tested scenarios live in [`examples/`](examples/). Each has a `main.go
 | [aws-dynamodb-retry](examples/aws-dynamodb-retry/) | the AWS SDK's own retryer recovers from an injected outage | `adapter/aws` |
 | [net-conn-drop](examples/net-conn-drop/) | a read loop retries through a transient connection drop | `adapter/net` |
 | [slow-body-read](examples/slow-body-read/) | a `Truncate` fault cuts a response body mid-JSON; the reader surfaces a clean parse error | `adapter/io` |
+| [response-mutate](examples/response-mutate/) | a client degrades gracefully when chaos corrupts a successful 200 body | `fault.ResponseMutate` |
 | [chaos-point](examples/chaos-point/) | an explicit `chaos.Point` guards a post-commit hook | `chaos` |
 | [clock-skew](examples/clock-skew/) | a token expires once `fault.Clock` skews `engine.Now` past its TTL | `fault.Clock` |
 | [terms-dsl](examples/terms-dsl/) | a one-line terms string activates chaos with no rule-building code | `source/terms` |
 | [prod-safety-rails](examples/prod-safety-rails/) | failure budget + caps + guard + kill switch bound the blast radius | `engine` |
+| [observability-during-chaos](examples/observability-during-chaos/) | an `engine.Observer` records a chaos fire for logs/metrics/traces | `engine` |
+| [fanout-partial-failure](examples/fanout-partial-failure/) | a fan-out degrades to a partial result when one branch is faulted | `adapter/http` |
 
 Per-symbol godoc examples live next to each package on [pkg.go.dev](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic).
+
+## Cookbook
+
+The [cookbook](cookbook/) answers "How do I test that…?" — each recipe maps a
+resilience question to the rule shape and the runnable example that proves it,
+including [migrate-from-failpoint](cookbook/migrate-from-failpoint.md) and
+[migrate-from-gofail](cookbook/migrate-from-gofail.md) guides.
 
 ## Repository layout
 

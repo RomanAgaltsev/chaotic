@@ -11,4 +11,7 @@ and the same token reads as expired. This is the bug class `fault.Clock` exists
 to surface: deadline / expiry / timezone arithmetic that only breaks when the
 clock is wrong.
 
-go run . go test ./…
+```bash
+go run .
+go test ./...
+```
