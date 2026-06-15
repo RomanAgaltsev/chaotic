@@ -424,6 +424,7 @@ Runnable, tested scenarios live in [`examples/`](examples/). Each has a `main.go
 | [terms-dsl](examples/terms-dsl/) | a one-line terms string activates chaos with no rule-building code | `source/terms` |
 | [prod-safety-rails](examples/prod-safety-rails/) | failure budget + caps + guard + kill switch bound the blast radius | `engine` |
 | [observability-during-chaos](examples/observability-during-chaos/) | an `engine.Observer` records a chaos fire for logs/metrics/traces | `engine` |
+| [fanout-partial-failure](examples/fanout-partial-failure/) | a fan-out degrades to a partial result when one branch is faulted | `adapter/http`
 
 Per-symbol godoc examples live next to each package on [pkg.go.dev](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic).
 
