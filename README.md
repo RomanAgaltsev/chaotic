@@ -423,6 +423,7 @@ Runnable, tested scenarios live in [`examples/`](examples/). Each has a `main.go
 | [clock-skew](examples/clock-skew/) | a token expires once `fault.Clock` skews `engine.Now` past its TTL | `fault.Clock` |
 | [terms-dsl](examples/terms-dsl/) | a one-line terms string activates chaos with no rule-building code | `source/terms` |
 | [prod-safety-rails](examples/prod-safety-rails/) | failure budget + caps + guard + kill switch bound the blast radius | `engine` |
+| [observability-during-chaos](examples/observability-during-chaos/) | an `engine.Observer` records a chaos fire for logs/metrics/traces | `engine` |
 
 Per-symbol godoc examples live next to each package on [pkg.go.dev](https://pkg.go.dev/github.com/RomanAgaltsev/chaotic).
 
