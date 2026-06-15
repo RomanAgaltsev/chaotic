@@ -3,12 +3,13 @@
 package scan
 
 import (
+	"cmp"
 	"fmt"
 	"go/ast"
 	"go/constant"
 	"go/types"
 	"os"
-	"sort"
+	"slices"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -76,14 +77,12 @@ func load(cfg *packages.Config, patterns []string) ([]Point, error) {
 			})
 		}
 	}
-	sort.Slice(pts, func(i, j int) bool {
-		if pts[i].Name != pts[j].Name {
-			return pts[i].Name < pts[j].Name
-		}
-		if pts[i].File != pts[j].File {
-			return pts[i].File < pts[j].File
-		}
-		return pts[i].Line < pts[j].Line
+	slices.SortFunc(pts, func(a, b Point) int {
+		return cmp.Or(
+			cmp.Compare(a.Name, b.Name),
+			cmp.Compare(a.File, b.File),
+			cmp.Compare(a.Line, b.Line),
+		)
 	})
 	return pts, nil
 }

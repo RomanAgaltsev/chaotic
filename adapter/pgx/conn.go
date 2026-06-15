@@ -57,6 +57,11 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...any) (pgconn.Comman
 // QueryRow runs the engine's chaos for the operation, then delegates to the
 // underlying conn's QueryRow. On chaos error it returns a row that yields the
 // error from Scan.
+//
+// pgx defers the real query to Row.Scan, so on the pass-through path the outcome
+// reported to a WithFailureBudget is optimistic (always nil): a query that fails
+// only at Scan time is not seen by the budget. The injected-fault path reports
+// the fault error correctly.
 func (c *Conn) QueryRow(ctx context.Context, sql string, args ...any) pgxv5.Row {
 	if !c.eng.Enabled() {
 		return c.b.QueryRow(ctx, sql, args...)
@@ -74,6 +79,10 @@ func (c *Conn) QueryRow(ctx context.Context, sql string, args ...any) pgxv5.Row 
 // SendBatch runs the engine's chaos for the operation, then delegates to the
 // underlying conn's SendBatch. On chaos error it returns batch results that
 // yield the error from every method.
+//
+// As with QueryRow, pgx defers execution to the returned BatchResults, so the
+// pass-through outcome reported to a WithFailureBudget is optimistic (always nil);
+// errors surfaced only when the batch results are read are not seen by the budget.
 func (c *Conn) SendBatch(ctx context.Context, b *pgxv5.Batch) pgxv5.BatchResults {
 	if !c.eng.Enabled() {
 		return c.b.SendBatch(ctx, b)

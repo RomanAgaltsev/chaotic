@@ -4,7 +4,7 @@
 package chaostest
 
 import (
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/RomanAgaltsev/chaotic/engine"
@@ -43,6 +43,6 @@ func AssertEventsExhausted(t testing.TB, eng *engine.Engine) {
 	if len(unfired) == 0 {
 		return
 	}
-	sort.Strings(unfired)
+	slices.Sort(unfired)
 	t.Errorf("chaotic: %d rule(s) never fired: %v", len(unfired), unfired)
 }

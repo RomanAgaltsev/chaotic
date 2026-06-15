@@ -44,12 +44,12 @@ func (l latencyFault) Apply(ctx context.Context) error {
 	return sleep(ctx, l.d)
 }
 
-// Jittered sleeps for a uniformly random duration in [min, max]. Negative or
-// zero values are treated as "no sleep". If max <= min, sleeps for min.
-func Jittered(min, max time.Duration) Fault {
+// Jittered sleeps for a uniformly random duration in [lo, hi]. Negative or
+// zero values are treated as "no sleep". If hi <= lo, sleeps for lo.
+func Jittered(lo, hi time.Duration) Fault {
 	return jitteredFault{
-		min: min,
-		max: max,
+		min: lo,
+		max: hi,
 	}
 }
 
@@ -174,10 +174,10 @@ func (disconnectFault) Kind() Kind { return KindDisconnect }
 // sequence of sleep durations is reproducible across runs with the same seed.
 // Use it when a chaos test must be deterministically replayable. The draw is
 // mutex-guarded. The fault is safe for concurrent use.
-func JitteredSeed(min, max time.Duration, seed int64) Fault {
+func JitteredSeed(lo, hi time.Duration, seed int64) Fault {
 	return &seededJitter{
-		min: min,
-		max: max,
+		min: lo,
+		max: hi,
 		rng: rand.New(rand.NewPCG(uint64(seed), uint64(seed)^0x9E3779B97F4A7C15)), //nolint:gosec // non-cryptographic randomness is intentional
 	}
 }

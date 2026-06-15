@@ -159,10 +159,6 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 			e.notifySkip(r.name, op, ReasonCounter)
 			continue
 		}
-		if !fire {
-			e.notifySkip(r.name, op, ReasonCounter)
-			continue
-		}
 		if r.rateLimiter != nil && !r.rateLimiter.allow() {
 			e.notifySkip(r.name, op, ReasonRateLimit)
 			continue

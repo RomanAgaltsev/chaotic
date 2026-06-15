@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sort"
+	"slices"
 	"sync"
 
 	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
@@ -40,7 +40,7 @@ func FanOut(client *http.Client, base string, paths []string) []string {
 		}(p)
 	}
 	wg.Wait()
-	sort.Strings(ok)
+	slices.Sort(ok)
 	return ok
 }
 

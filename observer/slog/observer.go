@@ -24,7 +24,7 @@ func New(logger *slog.Logger) *Observer {
 	}
 }
 
-// RuleFired adds 1 to fired rule counter.
+// RuleFired logs a fired rule at info level.
 func (o *Observer) RuleFired(ruleName string, op engine.Op, _ engine.Action) {
 	o.logger.LogAttrs(context.Background(), slog.LevelInfo, "chaos rule fired",
 		slog.String("rule", ruleName),
@@ -34,7 +34,7 @@ func (o *Observer) RuleFired(ruleName string, op engine.Op, _ engine.Action) {
 	)
 }
 
-// RuleSkipped adds 1 to skipped rule counter.
+// RuleSkipped logs a skipped rule (with its reason) at debug level.
 func (o *Observer) RuleSkipped(ruleName string, op engine.Op, reason string) {
 	o.logger.LogAttrs(context.Background(), slog.LevelDebug, "chaos rule skipped",
 		slog.String("rule", ruleName),
