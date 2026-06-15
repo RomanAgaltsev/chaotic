@@ -54,12 +54,18 @@ Cap how many faults fire across a sliding window with engine.WithFailureBudget, 
 
 ```go
 eng := engine.New(engine.WithFailureBudget(0.5, 10)) // stop injecting once >50% of last 10 calls errored
+```
+
 Nearest runnable example: prod-safety-rails.
-rate-limiter-sheds-load
+
+### rate-limiter-sheds-load
+
 Fault a fraction of calls and assert your limiter sheds (rejects/queues) rather than melting down.
+
+```go
 eng.AddRule(engine.NewRule(
     engine.MatchKind(engine.OpHTTPClient),
-    engine.Probability(0.2),
+    engine.Probability(0.2, 42),
     engine.WithFault(fault.Error(errors.New("overloaded"))),
 ).Named("shed"))
 ```
@@ -70,7 +76,7 @@ Nearest runnable example: prod-safety-rails.
 
 Fault the Redis call backing your lock and assert the lock acquisition fails closed (denies) rather than open (grants on error).
 
-```Go
+```go
 eng.AddRule(engine.NewRule(
     engine.MatchKind(engine.OpRedis),
     engine.MatchName("SET"),
@@ -84,7 +90,7 @@ Nearest runnable example: redis-cache-fallback.
 
 Return a 429 with a Retry-After header and assert your delivery loop honors it.
 
-```Go
+```go
 eng.AddRule(engine.NewRule(
     engine.MatchKind(engine.OpHTTPClient),
     engine.WithFault(fault.HTTPStatus(429)),
@@ -98,7 +104,7 @@ Nearest runnable example: retry-http.
 
 Truncate a streamed/proto response body and assert your decoder surfaces a clean error instead of panicking.
 
-```Go
+```go
 eng.AddRule(engine.NewRule(
     engine.MatchKind(engine.OpIO),
     engine.WithFault(fault.Truncate(8)),
@@ -111,7 +117,7 @@ Nearest runnable example: slow-body-read.
 
 Combine WithRateLimit and WithMaxConcurrent so injected failures cannot amplify into an unbounded retry storm.
 
-```Go
+```go
 eng := engine.New(
     engine.WithRateLimit(50),     // at most 50 fault fires/sec
     engine.WithMaxConcurrent(10), // at most 10 in-flight faulted calls

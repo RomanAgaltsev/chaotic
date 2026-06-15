@@ -8,3 +8,4 @@ point where a real service forwards the fire to logs, metrics, or traces.
 ```bash
 go run .        # prints: observer saw fires: [http-fail]
 go test ./...   # asserts the observer recorded the fire
+```

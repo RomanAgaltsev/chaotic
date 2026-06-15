@@ -11,3 +11,4 @@ returns `"unknown"` instead of panicking or returning a bogus value.
 ```bash
 go run .        # prints: unknown
 go test ./...   # asserts the degraded path and the clean (no-chaos) path
+```

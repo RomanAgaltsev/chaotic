@@ -17,6 +17,6 @@ make requests fail on demand — no real outage, no flaky timing, and no Docker.
 
 ## Run it
 
-go test ./…
+go test ./...
 
 The test runs an **in-process** nats-server (no Docker, no external broker).

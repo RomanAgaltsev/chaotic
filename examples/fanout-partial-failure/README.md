@@ -9,3 +9,4 @@ faults that one branch. The aggregator returns the two branches that succeeded
 ```bash
 go run .        # prints: succeeded: [/a /c]
 go test ./...   # asserts the faulted branch is dropped, and the clean path returns all three
+```
