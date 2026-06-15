@@ -19,6 +19,7 @@ live next to each package (see the `Example*` functions on
 | [rabbitmq-publish-retry](rabbitmq-publish-retry/) | a publisher retries through a transient RabbitMQ outage (needs Docker) | adapter/rabbitmq |
 | [aws-dynamodb-retry](aws-dynamodb-retry/) | the AWS SDK's own retryer recovers from an injected outage | adapter/aws |
 | [net-conn-drop](net-conn-drop/) | a read loop retries through a transient connection drop | adapter/net |
+| [response-mutate](response-mutate/) | a client degrades gracefully when chaos corrupts a successful 200 body | fault.ResponseMutate |
 | [chaos-point](chaos-point/) | an explicit `chaos.Point` guards a post-commit hook | chaos |
 | [clock-skew](clock-skew/) | a token expires once `fault.Clock` skews `engine.Now` past its TTL | fault.Clock |
 | [terms-dsl](terms-dsl/) | a one-line terms string activates chaos with no rule-building code | source/terms |

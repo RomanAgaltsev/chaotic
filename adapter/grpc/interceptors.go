@@ -36,6 +36,11 @@ func UnaryClientInterceptor(eng *engine.Engine) grpc.UnaryClientInterceptor {
 			return toStatus(err)
 		}
 		err := invoker(ctx, method, req, reply, cc, opts...)
+		if err == nil {
+			if rr, ok := action.(engine.ResultReporter); ok {
+				_ = rr.Result(ctx, reply)
+			}
+		}
 		reportOutcome(ctx, action, err)
 		return err
 	}

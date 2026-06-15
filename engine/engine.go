@@ -185,7 +185,9 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 			release = rel
 		}
 		e.recordHit(r.name)
-		act := &ruleAction{faults: faults, eng: e, op: op, release: release, name: r.name}
+		before, mutators := partitionFaults(faults)
+		act := &ruleAction{faults: before, mutators: mutators, eng: e, op: op, release: release, name: r.name}
+
 		if e.observer != nil && r.name != "" {
 			e.observer.RuleFired(r.name, op, act)
 		}
@@ -204,6 +206,32 @@ func (e *Engine) passOrTrack() Action {
 	return &trackingAction{
 		eng: e,
 	}
+}
+
+// partitionFaults splits a fired rule's faults into those executed in the Before
+// chain and those (result mutators) applied to the wrapped call's result after a
+// successful call. When no fault is a mutator (the common case) the original
+// slice is returned unchanged, so the firing path allocates nothing extra.
+func partitionFaults(faults []fault.Fault) (before, mutators []fault.Fault) {
+	hasMutator := false
+	for _, f := range faults {
+		if _, ok := f.(resultMutator); ok {
+			hasMutator = true
+			break
+		}
+	}
+	if !hasMutator {
+		return faults, nil
+	}
+	before = make([]fault.Fault, 0, len(faults))
+	for _, f := range faults {
+		if _, ok := f.(resultMutator); ok {
+			mutators = append(mutators, f)
+		} else {
+			before = append(before, f)
+		}
+	}
+	return before, mutators
 }
 
 func (e *Engine) notifySkip(name string, op Op, reason string) {
@@ -235,6 +263,7 @@ func (e *Engine) recordOutcome(callErr error) {
 // wrapped call's outcome to the engine.
 type ruleAction struct {
 	faults      []fault.Fault
+	mutators    []fault.Fault
 	eng         *Engine
 	op          Op
 	name        string
@@ -286,6 +315,21 @@ func (a *ruleAction) notifyInjected(ctx context.Context, f fault.Fault) {
 func (a *ruleAction) After(_ context.Context) error {
 	a.doRelease()
 	return nil
+}
+
+// Result applies each result-mutating fault to the wrapped call's result in
+// declared order, returning the final value. Adapters call it only on the
+// success path; it is a no-op when the fired rule carried no result mutators.
+func (a *ruleAction) Result(ctx context.Context, result any) any {
+	for _, f := range a.mutators {
+		m, ok := f.(resultMutator)
+		if !ok {
+			continue
+		}
+		result = m.MutateResult(result)
+		a.notifyInjected(ctx, f)
+	}
+	return result
 }
 
 func (a *ruleAction) Outcome(_ context.Context, callErr error) {

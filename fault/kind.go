@@ -19,6 +19,7 @@ const (
 	KindSlowReader
 	KindSlowWriter
 	KindTruncate
+	KindResponseMutate
 )
 
 // Kinded is implemented by every built-in fault so tools can classify it

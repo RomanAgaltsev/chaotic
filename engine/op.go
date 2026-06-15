@@ -61,3 +61,18 @@ var Pass Action = passAction{}
 type OutcomeReporter interface {
 	Outcome(ctx context.Context, callErr error)
 }
+
+// ResultReporter is an optional interface an Action may implement to mutate the
+// wrapped call's typed result after a SUCCESSFUL call. Adapters that have a
+// result object call Result and use the returned value. It is not invoked when
+// Before short-circuits the call, nor when the wrapped call returns an error.
+type ResultReporter interface {
+	Result(ctx context.Context, result any) any
+}
+
+// resultMutator is implemented by faults (e.g. fault.ResponseMutate) that modify
+// the wrapped call's result rather than acting before the call. The engine
+// detects it structurally so the fault package never imports engine.
+type resultMutator interface {
+	MutateResult(result any) any
+}
