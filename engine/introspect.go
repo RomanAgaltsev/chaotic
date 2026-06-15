@@ -28,7 +28,11 @@ type RuleInfo struct {
 // Info returns a RuleInfo describing r.
 func (r Rule) Info() RuleInfo {
 	if r.staged != nil {
-		fi := make([]fault.Kind, 0)
+		var n int
+		for _, st := range r.staged.stages {
+			n += len(st.Faults)
+		}
+		fi := make([]fault.Kind, 0, n)
 		for _, st := range r.staged.stages {
 			for _, f := range st.Faults {
 				fi = append(fi, fault.KindOf(f))

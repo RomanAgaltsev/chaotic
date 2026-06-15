@@ -2,7 +2,7 @@ package engine
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -231,7 +231,7 @@ func lintOverlaps(specs []RuleSpec) []Finding {
 // name glob. Two specs with the same signature target the same operations.
 func specSignature(s RuleSpec) string {
 	kinds := append([]string(nil), s.Kinds...)
-	sort.Strings(kinds)
+	slices.Sort(kinds)
 	return strings.Join(kinds, ",") + "|" + s.NameGlob
 }
 

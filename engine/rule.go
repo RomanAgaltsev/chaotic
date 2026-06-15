@@ -116,6 +116,13 @@ func Always() RuleOption {
 
 // Times makes the rule fire on the first n matches. After n, the rule never
 // fires again until Engine.Reset clears the counter.
+//
+// The counter advances on each match that passes the counter gate, not on each
+// actual injection: engine-level safety rails (WithRateLimit, WithMaxConcurrent,
+// WithFailureBudget) and WithPerRuleRateLimit are layered on top and can suppress
+// a fire after the count has been consumed. Combining Times with those bounds can
+// therefore exhaust the count without injecting n faults. The always-on Hits
+// counter (Engine.Hits) still reflects only actual fires.
 func Times(n int) RuleOption {
 	return func(r *Rule) {
 		r.counter = &timesCounter{
