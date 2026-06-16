@@ -140,6 +140,19 @@ conn, err := grpc.NewClient(target,
 chaosPool := chaospgx.WrapPool(pool, eng) // intercepts Query, Exec, SendBatch, Begin, Acquire, ...
 ```
 
+#### Inject behind an interface (zero consumer type change)
+
+Type your field against `chaospgx.Querier` instead of `*pgxpool.Pool`:
+
+​```go
+type Store struct{ DB chaospgx.Querier } // satisfied by *pgxpool.Pool and *chaospgx.Pool
+​```
+
+Inject the real pool in production and `chaospgx.WrapPool(pool, eng)` in tests.
+`Querier` covers `Query`, `QueryRow`, `Exec`, `SendBatch`, `Ping`. The
+transaction path (`Begin`/`BeginTx`) and `Acquire` keep the concrete
+`*chaospgx.Pool` type by design — see the package docs.
+
 ### Redis (go-redis v9)
 
 ```go
