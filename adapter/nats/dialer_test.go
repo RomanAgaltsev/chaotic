@@ -6,9 +6,10 @@ import (
 	"errors"
 	"testing"
 
+	natsgo "github.com/nats-io/nats.go"
+
 	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/RomanAgaltsev/chaotic/fault"
-	natsgo "github.com/nats-io/nats.go"
 )
 
 func TestChaosDialerFaultsBeforeNetwork(t *testing.T) {

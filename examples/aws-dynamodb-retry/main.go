@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -23,5 +24,5 @@ func GetItem(ctx context.Context, ddb *dynamodb.Client, table, id string) (*dyna
 }
 
 func main() {
-	fmt.Println("run `go test` in this directory to see the SDK retryer survive a chaos outage")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see the SDK retryer survive a chaos outage")
 }

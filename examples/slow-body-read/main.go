@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	chaosio "github.com/RomanAgaltsev/chaotic/adapter/io"
@@ -27,5 +28,5 @@ func main() {
 		engine.WithFault(fault.Truncate(4)),
 	).Named("trunc"))
 	got, _ := ReadBody(eng, `{"ok":true}`)
-	fmt.Printf("read %q\n", got)
+	fmt.Fprintf(os.Stdout, "read %q\n", got)
 }

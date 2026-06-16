@@ -9,10 +9,11 @@ import (
 	"net"
 	"testing"
 
+	goredis "github.com/redis/go-redis/v9"
+
 	chaosredis "github.com/RomanAgaltsev/chaotic/adapter/redis"
 	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/RomanAgaltsev/chaotic/fault"
-	goredis "github.com/redis/go-redis/v9"
 )
 
 // nextOK is a ProcessHook terminator that succeeds without touching the network.

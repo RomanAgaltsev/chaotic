@@ -4,10 +4,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 
 	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
 	"github.com/RomanAgaltsev/chaotic/engine"
@@ -57,7 +59,11 @@ func drive(n int) (clientCalls int) {
 	b := &breaker{threshold: 3}
 	for range n {
 		_ = b.call(func() error {
-			resp, err := client.Get(srv.URL)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL, nil)
+			if err != nil {
+				return err
+			}
+			resp, err := client.Do(req)
 			if err != nil {
 				return err
 			}
@@ -69,5 +75,5 @@ func drive(n int) (clientCalls int) {
 
 func main() {
 	calls := drive(10)
-	fmt.Printf("10 requests, breaker threshold 3: dependency was called %d times\n", calls)
+	fmt.Fprintf(os.Stdout, "10 requests, breaker threshold 3: dependency was called %d times\n", calls)
 }

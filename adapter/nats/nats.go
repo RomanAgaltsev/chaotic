@@ -164,8 +164,9 @@ type chaosDialer struct {
 // Dial consults the engine for the target address, then dials for real. A fault
 // returns before any socket is opened, so the connection is never half-formed.
 func (d *chaosDialer) Dial(network, address string) (net.Conn, error) {
+	var dialer net.Dialer
 	if !d.eng.Enabled() {
-		return net.Dial(network, address)
+		return dialer.DialContext(context.Background(), network, address)
 	}
 	ctx := context.Background()
 	action := d.eng.Eval(ctx, op(address, "dial", ""))
@@ -173,7 +174,7 @@ func (d *chaosDialer) Dial(network, address string) (net.Conn, error) {
 		reportOutcome(ctx, action, err)
 		return nil, mapErr(err)
 	}
-	conn, err := net.Dial(network, address)
+	conn, err := dialer.DialContext(ctx, network, address)
 	reportOutcome(ctx, action, err)
 	return conn, err
 }

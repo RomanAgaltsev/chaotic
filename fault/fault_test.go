@@ -44,7 +44,7 @@ func TestLatencyZeroIsImmediate(t *testing.T) {
 func TestJitteredStaysInRange(t *testing.T) {
 	min, max := 10*time.Millisecond, 30*time.Millisecond
 	f := Jittered(min, max)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		start := time.Now()
 		if err := f.Apply(context.Background()); err != nil {
 			t.Fatal(err)

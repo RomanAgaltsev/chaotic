@@ -8,8 +8,9 @@ package nats
 import (
 	"time"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	natsgo "github.com/nats-io/nats.go"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 type Conn struct {

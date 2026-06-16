@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	natsgo "github.com/nats-io/nats.go"
@@ -30,5 +31,5 @@ func RequestWithRetry(cc *chaosnats.Conn, subj string, data []byte, timeout time
 
 func main() {
 	_ = context.Background()
-	fmt.Println("run `go test` in this directory to see request-retry survive a chaos outage")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see request-retry survive a chaos outage")
 }

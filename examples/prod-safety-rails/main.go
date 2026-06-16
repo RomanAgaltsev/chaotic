@@ -43,7 +43,12 @@ func run() (injected, total int) {
 	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, newEngine())}
 	const n = 50
 	for range n {
-		resp, err := client.Get(srv.URL)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL, nil)
+		if err != nil {
+			injected++
+			continue
+		}
+		resp, err := client.Do(req)
 		if err != nil {
 			injected++
 			continue
@@ -55,5 +60,5 @@ func run() (injected, total int) {
 
 func main() {
 	injected, total := run()
-	fmt.Printf("%d/%d calls were faulted; the failure budget stopped the rest\n", injected, total)
+	fmt.Fprintf(os.Stdout, "%d/%d calls were faulted; the failure budget stopped the rest\n", injected, total)
 }

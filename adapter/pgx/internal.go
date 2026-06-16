@@ -8,17 +8,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// poolBackend is what *Pool delegates to. *pgxpool.Pool satisfies this
-// structurally. Tests substitute a fake.
-type poolBackend interface {
+// queryBackend is the query/transaction surface shared by *Pool and *Conn
+// delegates. poolBackend and connBackend each extend it with their own
+// lifecycle method (Acquire vs Close).
+type queryBackend interface {
 	Query(ctx context.Context, sql string, args ...any) (pgxv5.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgxv5.Row
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	SendBatch(ctx context.Context, b *pgxv5.Batch) pgxv5.BatchResults
 	Begin(ctx context.Context) (pgxv5.Tx, error)
 	BeginTx(ctx context.Context, txOpts pgxv5.TxOptions) (pgxv5.Tx, error)
-	Acquire(ctx context.Context) (*pgxpool.Conn, error)
 	Ping(ctx context.Context) error
+}
+
+// poolBackend is what *Pool delegates to. *pgxpool.Pool satisfies this
+// structurally. Tests substitute a fake.
+type poolBackend interface {
+	queryBackend
+	Acquire(ctx context.Context) (*pgxpool.Conn, error)
 }
 
 // connBackend is what *Conn delegates to.
@@ -27,13 +34,7 @@ type poolBackend interface {
 // (its termination API is Release() + Conn().Close(ctx) rather than a
 // single Close(ctx)); pooledConnBackend below adapts it.
 type connBackend interface {
-	Query(ctx context.Context, sql string, args ...any) (pgxv5.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...any) pgxv5.Row
-	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-	SendBatch(ctx context.Context, b *pgxv5.Batch) pgxv5.BatchResults
-	Begin(ctx context.Context) (pgxv5.Tx, error)
-	BeginTx(ctx context.Context, txOpts pgxv5.TxOptions) (pgxv5.Tx, error)
-	Ping(ctx context.Context) error
+	queryBackend
 	// Close terminates the underlying conn. For ConnDrop poisoning.
 	Close(ctx context.Context) error
 }

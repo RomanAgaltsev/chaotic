@@ -112,9 +112,8 @@ func Lint(rules []Rule) Report {
 			rep.Findings = append(rep.Findings, Finding{
 				Severity: SeverityHigh,
 				Rule:     lintName(info.Name),
-				Message: fmt.Sprintf(
-					"matches every operation on every call and injects %s",
-					strings.Join(terminal, ", ")),
+				Message: "matches every operation on every call and injects " +
+					strings.Join(terminal, ", "),
 			})
 			continue
 		}
@@ -135,61 +134,79 @@ func Lint(rules []Rule) Report {
 // underestimate).
 func LintSpecs(specs []RuleSpec) Report {
 	var rep Report
-
 	for _, s := range specs {
-		name := lintName(s.Name)
-
-		if s.NameGlob == "*" {
-			rep.Findings = append(rep.Findings, Finding{
-				Severity: SeverityWarn,
-				Rule:     name,
-				Message:  `name glob "*" matches every operation name`,
-			})
-		}
-
-		if s.Counter.Type == "probability" && s.Counter.P >= 1.0 {
-			rep.Findings = append(rep.Findings, Finding{
-				Severity: SeverityWarn,
-				Rule:     name,
-				Message:  "probability >= 1.0 always fires; use the Always counter instead",
-			})
-		}
-
-		broad := len(s.Kinds) == 0 && (s.NameGlob == "" || s.NameGlob == "*")
-		for _, fs := range s.Faults {
-			if (fs.Type == "slow_reader" || fs.Type == "slow_writer") && fs.Rate == 0 {
-				rep.Findings = append(rep.Findings, Finding{
-					Severity: SeverityWarn,
-					Rule:     name,
-					Message:  fmt.Sprintf("%s rate 0 blocks until context cancellation - a stream that never ends", fs.Type),
-				})
-			}
-			lintFault(name, broad, fs, &rep)
-		}
-		for _, st := range s.Stages {
-			for _, fs := range st.Faults {
-				lintFault(name, broad, fs, &rep)
-			}
-		}
-		if len(s.Stages) > 0 {
-			last := s.Stages[len(s.Stages)-1]
-			if last.Times == 0 {
-				for _, fs := range last.Faults {
-					if isTerminalFaultType(fs.Type) {
-						rep.Findings = append(rep.Findings, Finding{
-							Severity: SeverityWarn,
-							Rule:     name,
-							Message: fmt.Sprintf(
-								"staged rule fails permanently after its transient stages (open-ended final stage injects %s)", fs.Type),
-						})
-					}
-				}
-			}
-		}
+		lintSpec(s, &rep)
 	}
-
 	rep.Findings = append(rep.Findings, lintOverlaps(specs)...)
 	return rep
+}
+
+// lintSpec appends every hazard finding for a single spec: a wildcard glob, an
+// always-firing probability, per-fault hazards (flat and staged), and an
+// open-ended terminal final stage.
+func lintSpec(s RuleSpec, rep *Report) {
+	name := lintName(s.Name)
+
+	if s.NameGlob == "*" {
+		rep.Findings = append(rep.Findings, Finding{
+			Severity: SeverityWarn,
+			Rule:     name,
+			Message:  `name glob "*" matches every operation name`,
+		})
+	}
+	if s.Counter.Type == "probability" && s.Counter.P >= 1.0 {
+		rep.Findings = append(rep.Findings, Finding{
+			Severity: SeverityWarn,
+			Rule:     name,
+			Message:  "probability >= 1.0 always fires; use the Always counter instead",
+		})
+	}
+
+	broad := len(s.Kinds) == 0 && (s.NameGlob == "" || s.NameGlob == "*")
+	for _, fs := range s.Faults {
+		lintFlatFault(name, broad, fs, rep)
+	}
+	for _, st := range s.Stages {
+		for _, fs := range st.Faults {
+			lintFault(name, broad, fs, rep)
+		}
+	}
+	lintFinalStage(name, s.Stages, rep)
+}
+
+// lintFlatFault adds the never-ending-stream warning for a rate-0 slow fault,
+// then the shared per-fault findings.
+func lintFlatFault(name string, broad bool, fs FaultSpec, rep *Report) {
+	if (fs.Type == "slow_reader" || fs.Type == "slow_writer") && fs.Rate == 0 {
+		rep.Findings = append(rep.Findings, Finding{
+			Severity: SeverityWarn,
+			Rule:     name,
+			Message:  fs.Type + " rate 0 blocks until context cancellation - a stream that never ends",
+		})
+	}
+	lintFault(name, broad, fs, rep)
+}
+
+// lintFinalStage warns when a staged rule's open-ended final stage (Times == 0)
+// injects a terminal fault, which fails the call permanently.
+func lintFinalStage(name string, stages []StageSpec, rep *Report) {
+	if len(stages) == 0 {
+		return
+	}
+	last := stages[len(stages)-1]
+	if last.Times != 0 {
+		return
+	}
+	for _, fs := range last.Faults {
+		if isTerminalFaultType(fs.Type) {
+			rep.Findings = append(rep.Findings, Finding{
+				Severity: SeverityWarn,
+				Rule:     name,
+				Message: fmt.Sprintf(
+					"staged rule fails permanently after its transient stages (open-ended final stage injects %s)", fs.Type),
+			})
+		}
+	}
 }
 
 // specLatency returns the sleep duration a latency or jittered fault spec

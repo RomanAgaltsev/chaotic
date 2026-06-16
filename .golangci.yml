@@ -2,36 +2,179 @@ version: "2"
 
 run:
   timeout: 5m
+  relative-path-mode: gomod
+  issues-exit-code: 1
+  tests: true
+  modules-download-mode: readonly
+
+output:
+  formats:
+    text:
+      print-linter-name: true
+      print-issued-lines: true
+      colors: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: true
 
 linters:
-  default: standard   # errcheck, govet, ineffassign, staticcheck, unused
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
   enable:
+    - gocritic
     - revive
     - gosec
+    - depguard
     - bodyclose
-    - misspell
-    - unconvert
-    - usestdlibvars
+    - noctx
+    - containedctx
+    - cyclop
+    - gocognit
+    - funlen
+    - nakedret
+    - errorlint
+    - errname
+    - perfsprint
+    - prealloc
     - copyloopvar
-    - nilerr
+    - intrange
+    - exptostd
+    - asciicheck
+    - dupl
+    - unparam
+    - forbidigo
+    - usestdlibvars
+    - mirror
     - nolintlint
+    - godox
+    - testifylint
+    - sloglint
+
+  disable:
+    - gocyclo
+    - lll
+    - contextcheck
+    - err113
+    - varnamelen
+    - nlreturn
+    - wsl
+    - wrapcheck
+
+  exclusions:
+    generated: strict
+    presets:
+      - std-error-handling
+      - common-false-positives
+    rules:
+      - path: _test\.go
+        linters:
+          - cyclop
+          - gocognit
+          - dupl
+          - gosec
+          - funlen
+          - wrapcheck
+          - noctx
+          - containedctx
+          - testifylint
+          - unparam
+
   settings:
+    gosec:
+      config:
+        global:
+          # audit mode also reports explicit `_ = f()` error discards (G104).
+          # Those are deliberate fire-and-forget calls here (After hooks, defer
+          # Close, best-effort writes), so keep audit off and let the explicit
+          # blank identifier signal intent.
+          audit: false
+          show-ignored: true
+        severity: "medium"
+        confidence: "medium"
+      excludes:
+        - G102
+
+    cyclop:
+      max-complexity: 20
+
+    gocognit:
+      min-complexity: 20
+
+    funlen:
+      lines: 100
+      statements: 50
+
+    nakedret:
+      max-func-lines: 30
+
+    depguard:
+      rules:
+        Main:
+          files:
+            - $all
+          allow:
+            - $gostd
+            # depguard prefix matching: allow entries beginning with "go."
+            # (go.mongodb.org, go.opentelemetry.io below) shadow the "go/..."
+            # stdlib packages inside $gostd, so spell out the go/ subtree
+            # explicitly. cmd/chaotic-points scanner needs go/ast, go/types.
+            - "go/"
+            - "github.com/RomanAgaltsev/chaotic"
+            # Third-party libraries the adapter/observer/source modules wrap.
+            # The core (root module) stays stdlib-only; this list documents the
+            # full external dependency surface and still flags any new dep.
+            - "github.com/aws/aws-sdk-go-v2"
+            - "github.com/aws/smithy-go"
+            - "google.golang.org/grpc"
+            - "github.com/segmentio/kafka-go"
+            - "go.mongodb.org/mongo-driver"
+            - "github.com/nats-io"
+            - "github.com/jackc/pgx"
+            - "github.com/rabbitmq/amqp091-go"
+            - "github.com/redis/go-redis"
+            - "github.com/alicebob/miniredis"
+            - "go.opentelemetry.io/otel"
+            - "github.com/prometheus/client_golang"
+            - "gopkg.in/yaml.v3"
+            - "github.com/fsnotify/fsnotify"
+            - "golang.org/x/tools"
+            - "github.com/testcontainers/testcontainers-go"
+
+    revive:
+      severity: warning
+
+    perfsprint:
+      int-conversion: true
+      err-error: true
+      errorf: true
+      sprintf1: true
+
     nolintlint:
       require-explanation: true
       require-specific: true
-    revive:
-      rules:
-        - name: exported
-          disabled: false
-  exclusions:
-    rules:
-      # Test files may take shortcuts that are unsafe in production code.
-      - path: _test\.go
-        linters:
-          - gosec
-          - errcheck
+
+    forbidigo:
+      exclude-godoc-examples: true
+      analyze-types: true
+
+    godox:
+      keywords:
+        - TODO
+        - FIXME
+        - BUG
+        - HACK
 
 formatters:
   enable:
     - gofumpt
-    - goimports
+    - gci
+  settings:
+    gofumpt:
+      extra-rules: true
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/RomanAgaltsev/chaotic)
+      no-inline-comments: false

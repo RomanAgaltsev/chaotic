@@ -29,7 +29,7 @@ func TestRunIteratesProfilesResetsAndAppliesEachAndRunsBody(t *testing.T) {
 	_ = testing.Benchmark(func(b *testing.B) {
 		bench.Run(b, eng, profiles, func(sub *testing.B) {
 			bodyRuns++
-			for i := 0; i < sub.N; i++ {
+			for range sub.N {
 				_ = eng.Eval(context.Background(), engine.Op{Kind: engine.OpHTTPClient, Name: "/x"})
 			}
 		})

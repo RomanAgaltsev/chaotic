@@ -27,7 +27,7 @@ func newEngine() *engine.Engine {
 // execWithRetry retries the Exec up to attempts times.
 func execWithRetry(ctx context.Context, p *chaospgx.Pool, sql string, attempts int) error {
 	var err error
-	for i := 0; i < attempts; i++ {
+	for range attempts {
 		if _, err = p.Exec(ctx, sql); err == nil {
 			return nil
 		}
@@ -46,17 +46,17 @@ func run(ctx context.Context, dsn string) error {
 	if err := execWithRetry(ctx, cp, "SELECT 1", 3); err != nil {
 		return err
 	}
-	fmt.Println("exec succeeded after retry despite injected fault")
+	fmt.Fprintln(os.Stdout, "exec succeeded after retry despite injected fault")
 	return nil
 }
 
 func main() {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		fmt.Println("set DATABASE_URL to a running Postgres to run this example")
+		fmt.Fprintln(os.Stdout, "set DATABASE_URL to a running Postgres to run this example")
 		return
 	}
 	if err := run(context.Background(), dsn); err != nil {
-		fmt.Println("FAILED:", err)
+		fmt.Fprintln(os.Stderr, "FAILED:", err)
 	}
 }

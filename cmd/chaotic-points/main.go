@@ -57,7 +57,7 @@ func cmdList(args []string) int {
 		if p.Dynamic {
 			name = "<dynamic>"
 		}
-		fmt.Printf("%s\t%s:%d\n", name, p.File, p.Line)
+		fmt.Fprintf(os.Stdout, "%s\t%s:%d\n", name, p.File, p.Line)
 	}
 	return 0
 }
@@ -117,7 +117,7 @@ func cmdLint(args []string) int {
 func loadSpecs(rulesFiles, termsStrings, termsFiles repeatableFlag) ([]engine.RuleSpec, error) {
 	var specs []engine.RuleSpec
 	for _, f := range rulesFiles {
-		b, err := os.ReadFile(f) //nolint:gosec // operator-supplied config path
+		b, err := os.ReadFile(f)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +135,7 @@ func loadSpecs(rulesFiles, termsStrings, termsFiles repeatableFlag) ([]engine.Ru
 		specs = append(specs, ss...)
 	}
 	for _, f := range termsFiles {
-		b, err := os.ReadFile(f) //nolint:gosec // operator-supplied config path
+		b, err := os.ReadFile(f)
 		if err != nil {
 			return nil, err
 		}

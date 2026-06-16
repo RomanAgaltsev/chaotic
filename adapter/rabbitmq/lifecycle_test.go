@@ -6,9 +6,10 @@ import (
 	"context"
 	"testing"
 
+	amqp "github.com/rabbitmq/amqp091-go"
+
 	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/RomanAgaltsev/chaotic/fault"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // A WithMaxConcurrent slot must be released after each publish, or chaos silently

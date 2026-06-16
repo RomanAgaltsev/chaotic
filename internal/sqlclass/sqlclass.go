@@ -125,7 +125,7 @@ func splitOnDot(t string) []string {
 	out := []string{}
 	cur := strings.Builder{}
 	inQuote := byte(0)
-	for i := 0; i < len(t); i++ {
+	for i := range len(t) {
 		ch := t[i]
 		switch {
 		case inQuote != 0:

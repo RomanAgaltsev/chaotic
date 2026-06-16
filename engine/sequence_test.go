@@ -8,7 +8,7 @@ import (
 
 func TestSequenceFiresOnMaskedPositions(t *testing.T) {
 	r := NewRule(MatchKind(OpExplicit), Sequence([]bool{true, false, true}), WithFault(fault.Latency(0)))
-	got := []bool{}
+	got := make([]bool, 0, 5)
 	for range 5 {
 		got = append(got, r.counter.shouldFire())
 	}

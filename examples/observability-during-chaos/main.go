@@ -5,10 +5,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync"
 
 	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
@@ -48,7 +50,11 @@ func run(obs engine.Observer) error {
 	defer srv.Close()
 
 	client := &http.Client{Transport: chaoshttp.WrapTransport(http.DefaultTransport, eng)}
-	resp, err := client.Get(srv.URL)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := client.Do(req)
 	if resp != nil {
 		_ = resp.Body.Close()
 	}
@@ -58,5 +64,5 @@ func run(obs engine.Observer) error {
 func main() {
 	rec := &recorder{}
 	_ = run(rec)
-	fmt.Printf("observer saw fires: %v\n", rec.Fired())
+	fmt.Fprintf(os.Stdout, "observer saw fires: %v\n", rec.Fired())
 }

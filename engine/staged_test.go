@@ -98,11 +98,11 @@ func TestStagedCounterConcurrentFirePartitions(t *testing.T) {
 	}
 }
 
-var errStagedTest = stagedTestErr("staged boom")
+var errStagedTest = stagedTestError("staged boom")
 
-type stagedTestErr string
+type stagedTestError string
 
-func (e stagedTestErr) Error() string { return string(e) }
+func (e stagedTestError) Error() string { return string(e) }
 
 func TestWithStagesSetsStagedField(t *testing.T) {
 	r := NewRule(

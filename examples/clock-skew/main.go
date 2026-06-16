@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/RomanAgaltsev/chaotic/chaos"
@@ -43,6 +44,6 @@ func main() {
 	ctx := chaos.WithEngine(context.Background(), eng)
 
 	before, after := run(ctx)
-	fmt.Printf("token valid before skew:    %v\n", before)
-	fmt.Printf("token valid after +2h skew: %v\n", after)
+	fmt.Fprintf(os.Stdout, "token valid before skew:    %v\n", before)
+	fmt.Fprintf(os.Stdout, "token valid after +2h skew: %v\n", after)
 }

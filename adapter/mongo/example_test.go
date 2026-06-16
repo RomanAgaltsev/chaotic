@@ -7,9 +7,10 @@ import (
 	"errors"
 	"fmt"
 
+	"go.mongodb.org/mongo-driver/v2/bson"
+
 	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/RomanAgaltsev/chaotic/fault"
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func ExampleWrapCollection() {

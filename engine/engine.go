@@ -139,57 +139,80 @@ func (e *Engine) Eval(ctx context.Context, op Op) Action {
 	}
 	h := e.rules.Load()
 	for _, r := range rulesFor(h) {
-		if !r.matches(ctx, op) {
-			continue
+		if act, done := e.evalRule(ctx, op, &r); done {
+			return act
 		}
-		var fire bool
-		var faults []fault.Fault
-		switch {
-		case r.sticky != nil && r.sticky.sticky(op):
-			fire, faults = true, r.faults
-		case r.staged != nil:
-			fire, faults = r.staged.fire()
-		case r.counter.shouldFire():
-			fire, faults = true, r.faults
-			if r.sticky != nil {
-				r.sticky.mark(op)
-			}
-		}
-		if !fire {
-			e.notifySkip(r.name, op, ReasonCounter)
-			continue
-		}
-		if r.rateLimiter != nil && !r.rateLimiter.allow() {
-			e.notifySkip(r.name, op, ReasonRateLimit)
-			continue
-		}
-		if e.budget != nil && e.budget.overBudget() {
-			e.notifySkip(r.name, op, ReasonFailureBudget)
-			return e.passOrTrack()
-		}
-		if e.rateLimiter != nil && !e.rateLimiter.allow() {
-			e.notifySkip(r.name, op, ReasonRateLimit)
-			return e.passOrTrack()
-		}
-		var release func()
-		if e.maxConc != nil {
-			rel, ok := e.maxConc.tryAcquire()
-			if !ok {
-				e.notifySkip(r.name, op, ReasonMaxConcurrent)
-				return e.passOrTrack()
-			}
-			release = rel
-		}
-		e.recordHit(r.name)
-		before, mutators := partitionFaults(faults)
-		act := &ruleAction{faults: before, mutators: mutators, eng: e, op: op, release: release, name: r.name}
-
-		if e.observer != nil && r.name != "" {
-			e.observer.RuleFired(r.name, op, act)
-		}
-		return act
 	}
 	return e.passOrTrack()
+}
+
+// evalRule evaluates one rule against op. done reports whether Eval should stop
+// and return act; act is either a fired action or a budget/limit pass-through.
+// When done is false the caller proceeds to the next rule.
+func (e *Engine) evalRule(ctx context.Context, op Op, r *Rule) (act Action, done bool) {
+	if !r.matches(ctx, op) {
+		return nil, false
+	}
+	fire, faults := r.decideFire(op)
+	if !fire {
+		e.notifySkip(r.name, op, ReasonCounter)
+		return nil, false
+	}
+	if r.rateLimiter != nil && !r.rateLimiter.allow() {
+		e.notifySkip(r.name, op, ReasonRateLimit)
+		return nil, false
+	}
+	if e.budget != nil && e.budget.overBudget() {
+		e.notifySkip(r.name, op, ReasonFailureBudget)
+		return e.passOrTrack(), true
+	}
+	if e.rateLimiter != nil && !e.rateLimiter.allow() {
+		e.notifySkip(r.name, op, ReasonRateLimit)
+		return e.passOrTrack(), true
+	}
+	release, ok := e.acquireSlot(r.name, op)
+	if !ok {
+		return e.passOrTrack(), true
+	}
+	e.recordHit(r.name)
+	before, mutators := partitionFaults(faults)
+	act = &ruleAction{faults: before, mutators: mutators, eng: e, op: op, release: release, name: r.name}
+	if e.observer != nil && r.name != "" {
+		e.observer.RuleFired(r.name, op, act)
+	}
+	return act, true
+}
+
+// decideFire applies the rule's sticky/staged/counter logic to a matched op,
+// reporting whether it fires and the faults to inject.
+func (r *Rule) decideFire(op Op) (fire bool, faults []fault.Fault) {
+	switch {
+	case r.sticky != nil && r.sticky.sticky(op):
+		return true, r.faults
+	case r.staged != nil:
+		return r.staged.fire()
+	case r.counter.shouldFire():
+		if r.sticky != nil {
+			r.sticky.mark(op)
+		}
+		return true, r.faults
+	}
+	return false, nil
+}
+
+// acquireSlot reserves a max-concurrency slot when one is configured. ok is
+// false when the cap is saturated (the caller should pass through); release is
+// nil when no cap is configured or when ok is false.
+func (e *Engine) acquireSlot(name string, op Op) (release func(), ok bool) {
+	if e.maxConc == nil {
+		return nil, true
+	}
+	rel, ok := e.maxConc.tryAcquire()
+	if !ok {
+		e.notifySkip(name, op, ReasonMaxConcurrent)
+		return nil, false
+	}
+	return rel, true
 }
 
 // passOrTrack returns the bare Pass singleton unless a failure budget is

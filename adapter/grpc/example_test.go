@@ -6,11 +6,12 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
+
 	chaosgrpc "github.com/RomanAgaltsev/chaotic/adapter/grpc"
 	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/RomanAgaltsev/chaotic/fault"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
 )
 
 func ExampleUnaryClientInterceptor() {

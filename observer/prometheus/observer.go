@@ -5,8 +5,9 @@ package prometheus
 import (
 	"context"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // maxLabelLen bounds label cardinality by truncating long values, mirroring the

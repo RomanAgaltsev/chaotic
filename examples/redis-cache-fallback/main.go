@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	goredis "github.com/redis/go-redis/v9"
 )
@@ -35,5 +36,5 @@ func (s *Store) Get(ctx context.Context, key string) (string, bool) {
 }
 
 func main() {
-	fmt.Println("run `go test` in this directory to see the fallback under chaos")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see the fallback under chaos")
 }

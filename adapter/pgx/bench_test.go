@@ -24,7 +24,7 @@ func BenchmarkPoolExecNoRules(b *testing.B) {
 	p := benchPool(engine.New())
 	ctx := context.Background()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = p.Exec(ctx, "INSERT INTO t VALUES (1)")
 	}
 }
@@ -33,7 +33,7 @@ func BenchmarkPoolQueryNoRules(b *testing.B) {
 	p := benchPool(engine.New())
 	ctx := context.Background()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = p.Query(ctx, "SELECT 1")
 	}
 }
@@ -47,7 +47,7 @@ func BenchmarkPoolExecRuleNoMatch(b *testing.B) {
 	p := benchPool(eng)
 	ctx := context.Background()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = p.Exec(ctx, "INSERT INTO t VALUES (1)")
 	}
 }
@@ -62,7 +62,7 @@ func BenchmarkPoolExecRuleMatchPass(b *testing.B) {
 	p := benchPool(eng)
 	ctx := context.Background()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = p.Exec(ctx, "INSERT INTO t VALUES (1)")
 	}
 }

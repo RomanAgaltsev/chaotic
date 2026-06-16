@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -32,5 +33,5 @@ func PublishWithRetry(ctx context.Context, p publisher, exchange, key string, ms
 }
 
 func main() {
-	fmt.Println("run `go test` in this directory to see publish-retry survive a chaos outage")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see publish-retry survive a chaos outage")
 }

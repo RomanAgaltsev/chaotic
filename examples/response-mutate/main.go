@@ -5,11 +5,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 
 	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
@@ -23,7 +25,11 @@ type payload struct {
 // FetchName GETs url through client and returns payload.Name, or "unknown" if
 // the body cannot be decoded (the resilience this example exercises).
 func FetchName(client *http.Client, url string) string {
-	resp, err := client.Get(url)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return "unknown"
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "unknown"
 	}
@@ -54,5 +60,5 @@ func main() {
 		_ = json.NewEncoder(w).Encode(payload{Name: "alice"})
 	}))
 	defer srv.Close()
-	fmt.Println(FetchName(NewClient(), srv.URL))
+	fmt.Fprintln(os.Stdout, FetchName(NewClient(), srv.URL))
 }

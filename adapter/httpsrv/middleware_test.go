@@ -135,8 +135,8 @@ func TestMiddlewareReportsServerErrorToBudget(t *testing.T) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	for range 2 {
-		reс := httptest.NewRecorder()
-		h.ServeHTTP(reс, httptest.NewRequest(http.MethodGet, "/x", nil))
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/x", nil))
 	}
 	hits := eng.Hits("slow")
 	if hits != 2 {

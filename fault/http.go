@@ -50,7 +50,7 @@ func (h httpStatusFault) Kind() Kind {
 	return KindHTTPStatus
 }
 
-// HeaderFault is the sentinel a header fault returns. Adapters detect it via
+// HeaderFaultError is the sentinel a header fault returns. Adapters detect it via
 // errors.As, apply the mutation to the headers flowing toward the code under
 // test (request headers on the server, response headers on the client), then
 // let the wrapped call proceed - it does NOT abort the call.
@@ -59,13 +59,13 @@ func (h httpStatusFault) Kind() Kind {
 // short-circuits on the first sentinel, only one header fault applies per rule
 // (a preceding Latency is fine, it returns nil and continues). To mutate
 // several headers, use several rules, or wait for a future batch helper.
-type HeaderFault struct {
+type HeaderFaultError struct {
 	Strip bool // true => delete Key, false => set Key to Value
 	Key   string
 	Value string
 }
 
-func (*HeaderFault) Error() string {
+func (*HeaderFaultError) Error() string {
 	return "chaotic: header mutation"
 }
 
@@ -73,7 +73,7 @@ func (*HeaderFault) Error() string {
 // flowing toward the code under test.
 func HeaderInject(key, value string) Fault {
 	return headerFault{
-		hf: HeaderFault{
+		hf: HeaderFaultError{
 			Key:   key,
 			Value: value,
 		},
@@ -84,7 +84,7 @@ func HeaderInject(key, value string) Fault {
 // toward the code under test.
 func HeaderStrip(key string) Fault {
 	return headerFault{
-		hf: HeaderFault{
+		hf: HeaderFaultError{
 			Strip: true,
 			Key:   key,
 		},
@@ -92,7 +92,7 @@ func HeaderStrip(key string) Fault {
 }
 
 type headerFault struct {
-	hf HeaderFault
+	hf HeaderFaultError
 }
 
 func (h headerFault) Apply(context.Context) error {

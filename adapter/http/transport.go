@@ -65,7 +65,7 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 			_ = action.After(ctx)
 			return resp, nil
 		}
-		var hf *fault.HeaderFault
+		var hf *fault.HeaderFaultError
 		if errors.As(err, &hf) {
 			// A header fault mutates the response the caller reads, then the
 			// real call proceeds normally.
@@ -142,7 +142,7 @@ func synthResponse(req *http.Request, hse *fault.HTTPStatusError) *http.Response
 }
 
 // applyHeaderFault mutates h per the header fault: delete on strip, set otherwise.
-func applyHeaderFault(h http.Header, hf *fault.HeaderFault) {
+func applyHeaderFault(h http.Header, hf *fault.HeaderFaultError) {
 	if hf.Strip {
 		h.Del(hf.Key)
 		return
