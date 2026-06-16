@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	pgxv5 "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/RomanAgaltsev/chaotic/engine"
@@ -118,5 +119,64 @@ func TestInstrumentPoolConfig_NilGuards(t *testing.T) {
 	})
 }
 
-// referenced by Task 3 tests; declared here so the file compiles incrementally.
-var _ = time.Millisecond
+// recordingTracer captures whether it was invoked, to prove chaining.
+type recordingTracer struct{ started, ended bool }
+
+func (r *recordingTracer) TraceQueryStart(ctx context.Context, _ *pgxv5.Conn, _ pgxv5.TraceQueryStartData) context.Context {
+	r.started = true
+	return ctx
+}
+func (r *recordingTracer) TraceQueryEnd(_ context.Context, _ *pgxv5.Conn, _ pgxv5.TraceQueryEndData) {
+	r.ended = true
+}
+
+func TestInstrumentPoolConfig_AppliesQueryLatency(t *testing.T) {
+	cfg := baseConfig(t)
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpPGX),
+		engine.Times(1),
+		engine.WithFault(fault.Latency(50*time.Millisecond)),
+	).Named("slow-query"))
+
+	InstrumentPoolConfig(cfg, eng, WithoutDialFaults())
+
+	tr := cfg.ConnConfig.Tracer
+	if tr == nil {
+		t.Fatal("Tracer must be set when query latency is enabled")
+	}
+	start := time.Now()
+	ctx := tr.TraceQueryStart(context.Background(), nil, pgxv5.TraceQueryStartData{SQL: "SELECT 1"})
+	tr.TraceQueryEnd(ctx, nil, pgxv5.TraceQueryEndData{})
+	if elapsed := time.Since(start); elapsed < 40*time.Millisecond {
+		t.Fatalf("expected injected latency ~50ms, got %v", elapsed)
+	}
+}
+
+func TestInstrumentPoolConfig_ChainsExistingTracer(t *testing.T) {
+	cfg := baseConfig(t)
+	existing := &recordingTracer{}
+	cfg.ConnConfig.Tracer = existing
+	eng := engine.New() // disabled
+
+	InstrumentPoolConfig(cfg, eng, WithoutDialFaults())
+
+	tr := cfg.ConnConfig.Tracer
+	ctx := tr.TraceQueryStart(context.Background(), nil, pgxv5.TraceQueryStartData{SQL: "SELECT 1"})
+	tr.TraceQueryEnd(ctx, nil, pgxv5.TraceQueryEndData{})
+	if !existing.started || !existing.ended {
+		t.Fatalf("existing tracer must still be invoked: started=%v ended=%v", existing.started, existing.ended)
+	}
+}
+
+func TestInstrumentPoolConfig_WithoutQueryLatency_LeavesTracer(t *testing.T) {
+	cfg := baseConfig(t)
+	existing := &recordingTracer{}
+	cfg.ConnConfig.Tracer = existing
+	eng := engine.New()
+
+	InstrumentPoolConfig(cfg, eng, WithoutQueryLatency(), WithoutDialFaults())
+
+	if cfg.ConnConfig.Tracer != existing {
+		t.Fatal("Tracer must be left untouched when query latency is disabled")
+	}
+}
