@@ -126,6 +126,7 @@ func (r *recordingTracer) TraceQueryStart(ctx context.Context, _ *pgxv5.Conn, _ 
 	r.started = true
 	return ctx
 }
+
 func (r *recordingTracer) TraceQueryEnd(_ context.Context, _ *pgxv5.Conn, _ pgxv5.TraceQueryEndData) {
 	r.ended = true
 }
