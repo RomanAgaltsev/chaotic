@@ -2,7 +2,6 @@ package file_test
 
 import (
 	"context"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -13,7 +12,7 @@ import (
 	"github.com/RomanAgaltsev/chaotic/source/file"
 )
 
-func writeFile(t *testing.T, path string, content string) {
+func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
@@ -40,7 +39,7 @@ func TestWatchLoadsInitialThenReloads(t *testing.T) {
 	eng := engine.New()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.DiscardHandler)
 	go func() { _ = file.Watch(ctx, path, eng, logger) }()
 
 	waitFor(t, 2*time.Second, func() bool {

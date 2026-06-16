@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -40,26 +41,26 @@ func openStream(intc grpc.StreamClientInterceptor) (grpc.ClientStream, error) {
 }
 
 // openWithRetry retries opening the stream while the error is a transient
-// Unavailable, up to attempts times.
-func openWithRetry(intc grpc.StreamClientInterceptor, attempts int) (grpc.ClientStream, error) {
+// Unavailable, up to attempts times. The established stream is discarded; only
+// whether the open eventually succeeded matters for this demo.
+func openWithRetry(intc grpc.StreamClientInterceptor, attempts int) error {
 	var err error
 	for range attempts {
-		var s grpc.ClientStream
-		if s, err = openStream(intc); err == nil {
-			return s, nil
+		if _, err = openStream(intc); err == nil {
+			return nil
 		}
 		if status.Code(err) != codes.Unavailable {
-			return nil, err
+			return err
 		}
 	}
-	return nil, err
+	return err
 }
 
 func main() {
 	intc := chaosgrpc.StreamClientInterceptor(newEngine())
-	if _, err := openWithRetry(intc, 3); err != nil {
-		fmt.Println("FAILED:", err)
+	if err := openWithRetry(intc, 3); err != nil {
+		fmt.Fprintln(os.Stderr, "FAILED:", err)
 		return
 	}
-	fmt.Println("stream established after reconnect despite injected Unavailable")
+	fmt.Fprintln(os.Stdout, "stream established after reconnect despite injected Unavailable")
 }

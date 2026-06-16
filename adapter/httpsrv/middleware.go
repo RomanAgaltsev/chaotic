@@ -34,7 +34,7 @@ func Middleware(eng *engine.Engine) func(http.Handler) http.Handler {
 			}
 			action := eng.Eval(ctx, op)
 			if err := action.Before(ctx); err != nil {
-				var hf *fault.HeaderFault
+				var hf *fault.HeaderFaultError
 				if !errors.As(err, &hf) {
 					// A short-circuiting fault (error, conn drop, HTTP status)
 					// aborted the request. Report the outcome, release the bound,
@@ -96,7 +96,7 @@ func handleErr(w http.ResponseWriter, err error) {
 }
 
 // applyHeaderFault mutates h per the header fault: delete on strip, set otherwise.
-func applyHeaderFault(h http.Header, hf *fault.HeaderFault) {
+func applyHeaderFault(h http.Header, hf *fault.HeaderFaultError) {
 	if hf.Strip {
 		h.Del(hf.Key)
 		return

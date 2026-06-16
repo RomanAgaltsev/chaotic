@@ -17,7 +17,7 @@ func TestTranslateNil(t *testing.T) {
 
 func TestTranslatePassesArbitraryError(t *testing.T) {
 	err := errors.New("boom")
-	if got := translate(err); got != err {
+	if got := translate(err); !errors.Is(got, err) {
 		t.Fatalf("translate(boom) = %v, want same error", got)
 	}
 }

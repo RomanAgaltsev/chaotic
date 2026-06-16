@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	kafkago "github.com/segmentio/kafka-go"
@@ -31,5 +32,5 @@ func WriteWithRetry(ctx context.Context, w writer, attempts int, msgs ...kafkago
 }
 
 func main() {
-	fmt.Println("run `go test` in this directory to see write-retry survive a chaos outage")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see write-retry survive a chaos outage")
 }

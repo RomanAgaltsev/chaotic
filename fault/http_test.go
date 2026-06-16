@@ -38,9 +38,9 @@ func TestHTTPStatusKind(t *testing.T) {
 }
 
 func TestHeaderInjectReturnsSentinel(t *testing.T) {
-	var hf *HeaderFault
+	var hf *HeaderFaultError
 	if !errors.As(HeaderInject("X-Trace", "abc").Apply(context.Background()), &hf) {
-		t.Fatal("expected *HeaderFault")
+		t.Fatal("expected *HeaderFaultError")
 	}
 	if hf.Strip || hf.Key != "X-Trace" || hf.Value != "abc" {
 		t.Fatalf("hf = %+v, want set X-Trace:abc", hf)
@@ -48,9 +48,9 @@ func TestHeaderInjectReturnsSentinel(t *testing.T) {
 }
 
 func TestHeaderStripReturnsSentinel(t *testing.T) {
-	var hf *HeaderFault
+	var hf *HeaderFaultError
 	if !errors.As(HeaderStrip("X-Trace").Apply(context.Background()), &hf) {
-		t.Fatal("expected *HeaderFault")
+		t.Fatal("expected *HeaderFaultError")
 	}
 	if !hf.Strip || hf.Key != "X-Trace" {
 		t.Fatalf("hf = %+v, want strip X-Trace", hf)

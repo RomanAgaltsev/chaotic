@@ -97,7 +97,7 @@ func TestAlwaysFiresEveryTime(t *testing.T) {
 
 func TestTimesFiresFirstN(t *testing.T) {
 	r := NewRule(Times(3))
-	got := []bool{}
+	got := make([]bool, 0, 6)
 	for range 6 {
 		got = append(got, r.counter.shouldFire())
 	}
@@ -111,7 +111,7 @@ func TestTimesFiresFirstN(t *testing.T) {
 
 func TestRangeFiresInWindow(t *testing.T) {
 	r := NewRule(Range(2, 4))
-	got := []bool{}
+	got := make([]bool, 0, 6)
 	for range 6 {
 		got = append(got, r.counter.shouldFire())
 	}

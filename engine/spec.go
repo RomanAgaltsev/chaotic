@@ -79,6 +79,47 @@ func BuildRule(spec RuleSpec) (Rule, error) {
 	var opts []RuleOption
 	var errs []error
 
+	mopts, merrs := buildMatchOptions(spec)
+	opts = append(opts, mopts...)
+	errs = append(errs, merrs...)
+
+	if copt, err := buildCounterOption(spec.Counter); err != nil {
+		errs = append(errs, err)
+	} else {
+		opts = append(opts, copt)
+	}
+
+	faults, ferrs := buildFaultList(spec.Faults)
+	errs = append(errs, ferrs...)
+	if len(faults) > 0 {
+		opts = append(opts, WithFaults(faults...))
+	}
+
+	if len(spec.Stages) > 0 {
+		stages, serrs := buildStageOptions(spec)
+		errs = append(errs, serrs...)
+		if len(errs) == 0 {
+			opts = append(opts, WithStages(stages...))
+		}
+	}
+
+	if len(errs) > 0 {
+		return Rule{}, errors.Join(errs...)
+	}
+
+	r := NewRule(opts...)
+	if spec.Name != "" {
+		r = r.Named(spec.Name)
+	}
+	return r, nil
+}
+
+// buildMatchOptions turns the spec's match fields (kinds, name glob, attrs) into
+// RuleOptions, collecting one error per unknown kind.
+func buildMatchOptions(spec RuleSpec) ([]RuleOption, []error) {
+	var opts []RuleOption
+	var errs []error
+
 	if len(spec.Kinds) > 0 {
 		kinds := make([]Kind, 0, len(spec.Kinds))
 		for _, ks := range spec.Kinds {
@@ -99,26 +140,35 @@ func BuildRule(spec RuleSpec) (Rule, error) {
 	for k, v := range spec.Attrs {
 		opts = append(opts, MatchAttr(k, v))
 	}
+	return opts, errs
+}
 
-	switch spec.Counter.Type {
+// buildCounterOption maps a CounterSpec to its RuleOption, returning an error for
+// an out-of-range probability or an unknown counter type.
+func buildCounterOption(c CounterSpec) (RuleOption, error) {
+	switch c.Type {
 	case "", "always":
-		opts = append(opts, Always())
+		return Always(), nil
 	case "times":
-		opts = append(opts, Times(spec.Counter.N))
+		return Times(c.N), nil
 	case "range":
-		opts = append(opts, Range(spec.Counter.From, spec.Counter.To))
+		return Range(c.From, c.To), nil
 	case "probability":
-		if spec.Counter.P < 0 || spec.Counter.P > 1 {
-			errs = append(errs, fmt.Errorf("chaotic: probability p=%v out of [0,1]", spec.Counter.P))
-		} else {
-			opts = append(opts, Probability(spec.Counter.P, spec.Counter.Seed))
+		if c.P < 0 || c.P > 1 {
+			return nil, fmt.Errorf("chaotic: probability p=%v out of [0,1]", c.P)
 		}
+		return Probability(c.P, c.Seed), nil
 	default:
-		errs = append(errs, fmt.Errorf("chaotic: unknown counter type %q", spec.Counter.Type))
+		return nil, fmt.Errorf("chaotic: unknown counter type %q", c.Type)
 	}
+}
 
-	faults := make([]fault.Fault, 0, len(spec.Faults))
-	for _, fs := range spec.Faults {
+// buildFaultList builds every fault in specs, collecting one error per invalid
+// entry and skipping it.
+func buildFaultList(specs []FaultSpec) ([]fault.Fault, []error) {
+	faults := make([]fault.Fault, 0, len(specs))
+	var errs []error
+	for _, fs := range specs {
 		f, err := buildFault(fs)
 		if err != nil {
 			errs = append(errs, err)
@@ -126,51 +176,33 @@ func BuildRule(spec RuleSpec) (Rule, error) {
 		}
 		faults = append(faults, f)
 	}
-	if len(faults) > 0 {
-		opts = append(opts, WithFaults(faults...))
-	}
+	return faults, errs
+}
 
-	if len(spec.Stages) > 0 {
-		if spec.Counter.Type != "" && spec.Counter.Type != "always" {
-			errs = append(errs, errors.New("chaotic: stages cannot be combined with a counter"))
-		}
-		if len(spec.Faults) > 0 {
-			errs = append(errs, errors.New("chaotic: stages cannot be combined with top-level faults"))
-		}
-		stages := make([]Stage, 0, len(spec.Stages))
-		for i, ss := range spec.Stages {
-			last := i == len(spec.Stages)-1
-			if !last && ss.Times <= 0 {
-				errs = append(errs, fmt.Errorf("chaotic: stage %d: only the final stage may have Times <= 0", i))
-			}
-			if last && ss.Times < 0 {
-				errs = append(errs, errors.New("chaotic: final stage Times must be >= 0"))
-			}
-			sf := make([]fault.Fault, 0, len(ss.Faults))
-			for _, fs := range ss.Faults {
-				f, err := buildFault(fs)
-				if err != nil {
-					errs = append(errs, err)
-					continue
-				}
-				sf = append(sf, f)
-			}
-			stages = append(stages, Stage{Times: ss.Times, Faults: sf})
-		}
-		if len(errs) == 0 {
-			opts = append(opts, WithStages(stages...))
-		}
+// buildStageOptions validates the staged-schedule constraints and builds each
+// stage's faults, aggregating every problem into errs.
+func buildStageOptions(spec RuleSpec) ([]Stage, []error) {
+	var errs []error
+	if spec.Counter.Type != "" && spec.Counter.Type != "always" {
+		errs = append(errs, errors.New("chaotic: stages cannot be combined with a counter"))
 	}
-
-	if len(errs) > 0 {
-		return Rule{}, errors.Join(errs...)
+	if len(spec.Faults) > 0 {
+		errs = append(errs, errors.New("chaotic: stages cannot be combined with top-level faults"))
 	}
-
-	r := NewRule(opts...)
-	if spec.Name != "" {
-		r = r.Named(spec.Name)
+	stages := make([]Stage, 0, len(spec.Stages))
+	for i, ss := range spec.Stages {
+		last := i == len(spec.Stages)-1
+		if !last && ss.Times <= 0 {
+			errs = append(errs, fmt.Errorf("chaotic: stage %d: only the final stage may have Times <= 0", i))
+		}
+		if last && ss.Times < 0 {
+			errs = append(errs, errors.New("chaotic: final stage Times must be >= 0"))
+		}
+		sf, ferrs := buildFaultList(ss.Faults)
+		errs = append(errs, ferrs...)
+		stages = append(stages, Stage{Times: ss.Times, Faults: sf})
 	}
-	return r, nil
+	return stages, errs
 }
 
 // maxFaultLatency caps a config-declared latency/jittered window. Config is an
@@ -181,27 +213,9 @@ const maxFaultLatency = 5 * time.Minute
 func buildFault(fs FaultSpec) (fault.Fault, error) {
 	switch fs.Type {
 	case "latency":
-		d, err := time.ParseDuration(fs.Duration)
-		if err != nil {
-			return nil, fmt.Errorf("chaotic: latency duration %q: %w", fs.Duration, err)
-		}
-		if d < 0 || d > maxFaultLatency {
-			return nil, fmt.Errorf("chaotic: latency %s out of (0, %s]", d, maxFaultLatency)
-		}
-		return fault.Latency(d), nil
+		return buildLatencyFault(fs)
 	case "jittered":
-		minD, err := time.ParseDuration(fs.Min)
-		if err != nil {
-			return nil, fmt.Errorf("chaotic: jittered min %q: %w", fs.Min, err)
-		}
-		maxD, err := time.ParseDuration(fs.Max)
-		if err != nil {
-			return nil, fmt.Errorf("chaotic: jittered max %q: %w", fs.Max, err)
-		}
-		if minD < 0 || maxD > maxFaultLatency {
-			return nil, fmt.Errorf("chaotic: jittered window [%s,%s] out of (0, %s]", minD, maxD, maxFaultLatency)
-		}
-		return fault.Jittered(minD, maxD), nil
+		return buildJitteredFault(fs)
 	case "error":
 		msg := fs.Message
 		if msg == "" {
@@ -215,15 +229,9 @@ func buildFault(fs FaultSpec) (fault.Fault, error) {
 	case "disconnect":
 		return fault.Disconnect(), nil
 	case "slow_reader":
-		if fs.Rate < 0 {
-			return nil, fmt.Errorf("chaotic: slow_reader rate %d must be >= 0", fs.Rate)
-		}
-		return fault.SlowReader(fs.Rate), nil
+		return buildRateFault("slow_reader", fs.Rate, fault.SlowReader)
 	case "slow_writer":
-		if fs.Rate < 0 {
-			return nil, fmt.Errorf("chaotic: slow_writer rate %d must be >= 0", fs.Rate)
-		}
-		return fault.SlowWriter(fs.Rate), nil
+		return buildRateFault("slow_writer", fs.Rate, fault.SlowWriter)
 	case "truncate":
 		if fs.Limit < 0 {
 			return nil, fmt.Errorf("chaotic: truncate limit %d must be >= 0", fs.Limit)
@@ -231,4 +239,41 @@ func buildFault(fs FaultSpec) (fault.Fault, error) {
 		return fault.Truncate(fs.Limit), nil
 	}
 	return nil, fmt.Errorf("chaotic: unknown fault type %q", fs.Type)
+}
+
+// buildLatencyFault parses and bounds-checks a "latency" fault's duration.
+func buildLatencyFault(fs FaultSpec) (fault.Fault, error) {
+	d, err := time.ParseDuration(fs.Duration)
+	if err != nil {
+		return nil, fmt.Errorf("chaotic: latency duration %q: %w", fs.Duration, err)
+	}
+	if d < 0 || d > maxFaultLatency {
+		return nil, fmt.Errorf("chaotic: latency %s out of (0, %s]", d, maxFaultLatency)
+	}
+	return fault.Latency(d), nil
+}
+
+// buildJitteredFault parses and bounds-checks a "jittered" fault's window.
+func buildJitteredFault(fs FaultSpec) (fault.Fault, error) {
+	minD, err := time.ParseDuration(fs.Min)
+	if err != nil {
+		return nil, fmt.Errorf("chaotic: jittered min %q: %w", fs.Min, err)
+	}
+	maxD, err := time.ParseDuration(fs.Max)
+	if err != nil {
+		return nil, fmt.Errorf("chaotic: jittered max %q: %w", fs.Max, err)
+	}
+	if minD < 0 || maxD > maxFaultLatency {
+		return nil, fmt.Errorf("chaotic: jittered window [%s,%s] out of (0, %s]", minD, maxD, maxFaultLatency)
+	}
+	return fault.Jittered(minD, maxD), nil
+}
+
+// buildRateFault validates a non-negative byte rate and constructs the fault via
+// mk. Shared by slow_reader and slow_writer.
+func buildRateFault(name string, rate int, mk func(int) fault.Fault) (fault.Fault, error) {
+	if rate < 0 {
+		return nil, fmt.Errorf("chaotic: %s rate %d must be >= 0", name, rate)
+	}
+	return mk(rate), nil
 }

@@ -50,11 +50,11 @@ type faultForTest struct{}
 
 func (faultForTest) Apply(context.Context) error { return errStickyTest }
 
-var errStickyTest = stickyTestErr("sticky boom")
+var errStickyTest = stickyTestError("sticky boom")
 
-type stickyTestErr string
+type stickyTestError string
 
-func (e stickyTestErr) Error() string { return string(e) }
+func (e stickyTestError) Error() string { return string(e) }
 
 func TestStickyTrackerEvictsAtCap(t *testing.T) {
 	now := time.Unix(1000, 0)

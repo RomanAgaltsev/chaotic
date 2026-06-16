@@ -9,6 +9,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"os"
 	"sync/atomic"
 
 	chaossql "github.com/RomanAgaltsev/chaotic/adapter/sql"
@@ -69,8 +70,8 @@ func run() (opens int64, err error) {
 func main() {
 	opens, err := run()
 	if err != nil {
-		fmt.Println("FAILED:", err)
+		fmt.Fprintln(os.Stderr, "FAILED:", err)
 		return
 	}
-	fmt.Printf("exec succeeded; driver opened %d connections (1 poisoned, 1 healthy)\n", opens)
+	fmt.Fprintf(os.Stdout, "exec succeeded; driver opened %d connections (1 poisoned, 1 healthy)\n", opens)
 }

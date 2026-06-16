@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/RomanAgaltsev/chaotic/chaos"
 	"github.com/RomanAgaltsev/chaotic/engine"
@@ -45,8 +46,8 @@ func newEngine() *engine.Engine {
 func main() {
 	ctx := chaos.WithEngine(context.Background(), newEngine())
 	if err := publishWithRetry(ctx, "order-42", 3); err != nil {
-		fmt.Println("FAILED:", err)
+		fmt.Fprintln(os.Stderr, "FAILED:", err)
 		return
 	}
-	fmt.Println("published after retry despite injected fault")
+	fmt.Fprintln(os.Stdout, "published after retry despite injected fault")
 }

@@ -3,10 +3,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 
 	chaoshttp "github.com/RomanAgaltsev/chaotic/adapter/http"
 	"github.com/RomanAgaltsev/chaotic/engine"
@@ -33,8 +35,12 @@ func newServer() *httptest.Server {
 func getWithRetry(client *http.Client, url string, attempts int) (*http.Response, error) {
 	var err error
 	for range attempts {
+		var req *http.Request
+		if req, err = http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil); err != nil {
+			return nil, err
+		}
 		var resp *http.Response
-		if resp, err = client.Get(url); err == nil {
+		if resp, err = client.Do(req); err == nil {
 			return resp, nil
 		}
 	}
@@ -50,12 +56,12 @@ func run() error {
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	fmt.Println("succeeded after retry, status", resp.StatusCode)
+	fmt.Fprintln(os.Stdout, "succeeded after retry, status", resp.StatusCode)
 	return nil
 }
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Println("FAILED:", err)
+		fmt.Fprintln(os.Stderr, "FAILED:", err)
 	}
 }

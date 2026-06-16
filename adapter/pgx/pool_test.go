@@ -7,11 +7,12 @@ import (
 	"net"
 	"testing"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
-	"github.com/RomanAgaltsev/chaotic/fault"
 	pgxv5 "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 func newPoolWithFake(eng *engine.Engine, f *fakePool) *Pool {

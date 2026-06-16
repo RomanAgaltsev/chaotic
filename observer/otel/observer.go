@@ -5,10 +5,11 @@ package otel
 import (
 	"context"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Observer records chaotic.rule.fires and chaotic.rule.skips via an OTel meter.

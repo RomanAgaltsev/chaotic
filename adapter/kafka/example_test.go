@@ -7,9 +7,10 @@ import (
 	"errors"
 	"fmt"
 
+	kafkago "github.com/segmentio/kafka-go"
+
 	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/RomanAgaltsev/chaotic/fault"
-	kafkago "github.com/segmentio/kafka-go"
 )
 
 func ExampleWrapWriter() {

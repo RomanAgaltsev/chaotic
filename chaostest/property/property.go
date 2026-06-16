@@ -84,7 +84,7 @@ func snapshotRules(eng *engine.Engine) []engine.Rule {
 // returns result{failed:false}.
 func run(gens []RuleGen, body func(*engine.Engine) error, c config) result {
 	all := indices(len(gens))
-	for i := 0; i < c.runs; i++ {
+	for i := range c.runs {
 		seed := c.seed + int64(i)
 		if body(buildEngine(gens, seed, all)) != nil {
 			return result{failed: true, seed: seed, minIndices: minimize(gens, seed, all, body)}

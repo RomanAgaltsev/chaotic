@@ -131,7 +131,7 @@ func (c *chaosConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.
 	return c.wrapped.Begin() //nolint:staticcheck // -
 }
 
-func (c *chaosConn) runChaos(ctx context.Context, query string, method string) (engine.Action, error) {
+func (c *chaosConn) runChaos(ctx context.Context, query, method string) (engine.Action, error) {
 	if !c.eng.Enabled() {
 		return nil, nil
 	}

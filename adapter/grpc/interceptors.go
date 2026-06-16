@@ -9,12 +9,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/RomanAgaltsev/chaotic/fault"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // UnaryClientInterceptor returns a grpc.UnaryClientInterceptor that consults

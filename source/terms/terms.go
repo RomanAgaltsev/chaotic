@@ -1,6 +1,7 @@
 package terms
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,7 +14,7 @@ import (
 func splitTop(s string, sep byte) []string {
 	var parts []string
 	depth, start := 0, 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		switch s[i] {
 		case '(':
 			depth++
@@ -34,7 +35,7 @@ func splitTop(s string, sep byte) []string {
 // indexTop returns the index of the first sep at parenthesis depth 0, or -1.
 func indexTop(s string, sep byte) int {
 	depth := 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		switch s[i] {
 		case '(':
 			depth++
@@ -81,7 +82,7 @@ func Parse(s string) ([]engine.RuleSpec, error) {
 		specs = append(specs, spec)
 	}
 	if len(specs) == 0 {
-		return nil, fmt.Errorf("terms: empty ruleset")
+		return nil, errors.New("terms: empty ruleset")
 	}
 	return specs, nil
 }
@@ -155,7 +156,7 @@ func parseSelectors(s string, spec *engine.RuleSpec) error {
 func parseTerm(s string, spec *engine.RuleSpec) error {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return fmt.Errorf("terms: empty term")
+		return errors.New("terms: empty term")
 	}
 	// Mode prefix (int* or float%) is searched only before the first '(' so a
 	// '%' inside an arg string (e.g. error("50%")) is not mistaken for a mode.
@@ -192,7 +193,7 @@ func parseTerm(s string, spec *engine.RuleSpec) error {
 func splitTopArrow(s string) []string {
 	var parts []string
 	depth, inStr, start := 0, false, 0
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		c := s[i]
 		switch {
 		case inStr:

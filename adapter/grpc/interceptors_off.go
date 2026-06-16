@@ -6,8 +6,9 @@ package grpc
 import (
 	"context"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	"google.golang.org/grpc"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func UnaryClientInterceptor(eng *engine.Engine) grpc.UnaryClientInterceptor {

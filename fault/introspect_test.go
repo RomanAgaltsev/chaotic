@@ -57,7 +57,7 @@ func TestSentinelErrorStrings(t *testing.T) {
 		want string
 	}{
 		{"http status", &HTTPStatusError{Code: 503}, "chaotic: http status 503"},
-		{"header mutation", &HeaderFault{Key: "X", Value: "y"}, "chaotic: header mutation"},
+		{"header mutation", &HeaderFaultError{Key: "X", Value: "y"}, "chaotic: header mutation"},
 		{"stream truncate", &StreamFaultError{Mode: StreamTruncate, Limit: 4}, "truncate 4 B"},
 		{"stream slow write", &StreamFaultError{Mode: StreamSlowWrite, Rate: 512}, "slow write 512 B/s"},
 		{"stream slow read", &StreamFaultError{Mode: StreamSlowRead, Rate: 1024}, "slow read 1024 B/s"},

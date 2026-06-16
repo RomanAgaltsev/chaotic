@@ -49,7 +49,7 @@ func (f *fakeColl) InsertOne(context.Context, any, ...options.Lister[options.Ins
 	return fakeInsertOneResult, f.insertErr
 }
 
-func (f *fakeColl) UpdateOne(_ context.Context, _ any, _ any, _ ...options.Lister[options.UpdateOneOptions]) (*mongo.UpdateResult, error) {
+func (f *fakeColl) UpdateOne(_ context.Context, _, _ any, _ ...options.Lister[options.UpdateOneOptions]) (*mongo.UpdateResult, error) {
 	f.updates++
 	return fakeUpdateResult, f.updateErr
 }

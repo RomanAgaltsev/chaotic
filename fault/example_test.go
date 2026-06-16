@@ -64,7 +64,7 @@ func ExampleHeaderStrip() {
 	// HeaderStrip yields a sentinel describing a header deletion; the adapters
 	// apply it to the headers flowing toward the code under test.
 	err := fault.HeaderStrip("X-Trace-Id").Apply(context.Background())
-	var hf *fault.HeaderFault
+	var hf *fault.HeaderFaultError
 	errors.As(err, &hf)
 	fmt.Println(hf.Strip, hf.Key)
 	// Output: true X-Trace-Id

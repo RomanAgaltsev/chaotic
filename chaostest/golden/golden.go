@@ -163,15 +163,7 @@ var ErrReplay = errors.New("chaotic/golden: replayed fault")
 // a fault reconstructed from the first fired event's kind (latency faithfully,
 // everything else as ErrReplay). Rules with an empty name are ignored.
 func buildReplayRules(events []goldenEvent) []engine.Rule {
-	type acc struct {
-		mask     []bool
-		kinds    map[int]struct{}
-		order    []int
-		faultSet bool
-		latency  time.Duration
-		isErr    bool
-	}
-	byRule := map[string]*acc{}
+	byRule := map[string]*replayAcc{}
 	var ruleOrder []string
 	for _, ev := range events {
 		if ev.Rule == "" {
@@ -179,44 +171,67 @@ func buildReplayRules(events []goldenEvent) []engine.Rule {
 		}
 		a := byRule[ev.Rule]
 		if a == nil {
-			a = &acc{kinds: map[int]struct{}{}}
+			a = &replayAcc{kinds: map[int]struct{}{}}
 			byRule[ev.Rule] = a
 			ruleOrder = append(ruleOrder, ev.Rule)
 		}
-		a.mask = append(a.mask, ev.Fired)
-		if _, ok := a.kinds[ev.Kind]; !ok {
-			a.kinds[ev.Kind] = struct{}{}
-			a.order = append(a.order, ev.Kind)
-		}
-		if ev.Fired && !a.faultSet {
-			a.faultSet = true
-			if ev.FaultKind == int(fault.KindLatency) || ev.FaultKind == int(fault.KindJittered) {
-				a.latency = time.Duration(ev.LatencyNS)
-			} else {
-				a.isErr = true
-			}
-		}
+		a.observe(ev)
 	}
-	var rules []engine.Rule
+	rules := make([]engine.Rule, 0, len(ruleOrder))
 	for _, name := range ruleOrder {
-		a := byRule[name]
-		kinds := make([]engine.Kind, 0, len(a.order))
-		for _, k := range a.order {
-			kinds = append(kinds, engine.Kind(k))
-		}
-		var f fault.Fault
-		if a.isErr || !a.faultSet {
-			f = fault.Error(ErrReplay)
-		} else {
-			f = fault.Latency(a.latency)
-		}
-		rules = append(rules, engine.NewRule(
-			engine.MatchKind(kinds...),
-			engine.Sequence(a.mask),
-			engine.WithFault(f),
-		).Named(name))
+		rules = append(rules, byRule[name].rule(name))
 	}
 	return rules
+}
+
+// replayAcc accumulates, per recorded rule name, the data needed to rebuild a
+// replay rule: the ordered fire/skip mask, the distinct kinds the rule was
+// evaluated against, and the fault reconstructed from the first fired event.
+type replayAcc struct {
+	mask     []bool
+	kinds    map[int]struct{}
+	order    []int
+	faultSet bool
+	latency  time.Duration
+	isErr    bool
+}
+
+// observe folds one event into the accumulator: extending the mask, tracking a
+// newly-seen kind, and (on the first fired event) capturing the fault to replay.
+func (a *replayAcc) observe(ev goldenEvent) {
+	a.mask = append(a.mask, ev.Fired)
+	if _, ok := a.kinds[ev.Kind]; !ok {
+		a.kinds[ev.Kind] = struct{}{}
+		a.order = append(a.order, ev.Kind)
+	}
+	if ev.Fired && !a.faultSet {
+		a.faultSet = true
+		if ev.FaultKind == int(fault.KindLatency) || ev.FaultKind == int(fault.KindJittered) {
+			a.latency = time.Duration(ev.LatencyNS)
+		} else {
+			a.isErr = true
+		}
+	}
+}
+
+// rule reconstructs the engine.Rule for the accumulated name: latency is
+// replayed faithfully, every other fault kind as ErrReplay.
+func (a *replayAcc) rule(name string) engine.Rule {
+	kinds := make([]engine.Kind, 0, len(a.order))
+	for _, k := range a.order {
+		kinds = append(kinds, engine.Kind(k))
+	}
+	var f fault.Fault
+	if a.isErr || !a.faultSet {
+		f = fault.Error(ErrReplay)
+	} else {
+		f = fault.Latency(a.latency)
+	}
+	return engine.NewRule(
+		engine.MatchKind(kinds...),
+		engine.Sequence(a.mask),
+		engine.WithFault(f),
+	).Named(name)
 }
 
 // firedNames returns the ordered rule names of the fired events.
@@ -263,7 +278,7 @@ func writeGolden(path string, events []goldenEvent) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return err
 	}
-	f, err := os.Create(path) //nolint:gosec // path is a fixed testdata/<name>.golden built by goldenPath
+	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -272,7 +287,7 @@ func writeGolden(path string, events []goldenEvent) error {
 }
 
 func readGolden(path string) ([]goldenEvent, error) {
-	f, err := os.Open(path) //nolint:gosec // path is a fixed testdata/<name>.golden built by goldenPath
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}

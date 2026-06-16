@@ -3,9 +3,10 @@ package pgx
 import (
 	"context"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	pgxv5 "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // finish reports the call's outcome to the failure budget (when the action

@@ -6,8 +6,9 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/fsnotify/fsnotify"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Watch loads path into eng once, then watches it and calls eng.ReplaceRules on
@@ -39,18 +40,7 @@ func Watch(ctx context.Context, path string, eng *engine.Engine, logger *slog.Lo
 			if !ok {
 				return nil
 			}
-			if filepath.Base(ev.Name) != base {
-				continue
-			}
-			if ev.Op&(fsnotify.Write|fsnotify.Create) == 0 {
-				continue
-			}
-			n, lerr := reload(path, eng)
-			if lerr != nil {
-				logger.Warn("chaotic: rule reload failed, keeping previous rules", "error", lerr)
-				continue
-			}
-			logger.Info("chaotic: rule reloaded", "count", n)
+			handleFileEvent(ev, path, base, eng, logger)
 		case werr, ok := <-w.Errors:
 			if !ok {
 				return nil
@@ -58,6 +48,24 @@ func Watch(ctx context.Context, path string, eng *engine.Engine, logger *slog.Lo
 			logger.Warn("chaotic: watcher error", "error", werr)
 		}
 	}
+}
+
+// handleFileEvent reloads eng when ev is a content change (write or create) to
+// the watched file. Events on other files, non-content ops, and parse failures
+// are ignored (the latter logged, keeping the previous rules).
+func handleFileEvent(ev fsnotify.Event, path, base string, eng *engine.Engine, logger *slog.Logger) {
+	if filepath.Base(ev.Name) != base {
+		return
+	}
+	if ev.Op&(fsnotify.Write|fsnotify.Create) == 0 {
+		return
+	}
+	n, lerr := reload(path, eng)
+	if lerr != nil {
+		logger.Warn("chaotic: rule reload failed, keeping previous rules", "error", lerr)
+		return
+	}
+	logger.Info("chaotic: rule reloaded", "count", n)
 }
 
 // reload loads path and atomically swaps eng's rules. It recovers any panic

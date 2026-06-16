@@ -5,10 +5,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"slices"
 	"sync"
 
@@ -29,7 +31,11 @@ func FanOut(client *http.Client, base string, paths []string) []string {
 		wg.Add(1)
 		go func(p string) {
 			defer wg.Done()
-			resp, err := client.Get(base + p)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, base+p, nil)
+			if err != nil {
+				return
+			}
+			resp, err := client.Do(req)
 			if err != nil {
 				return
 			}
@@ -59,5 +65,5 @@ func main() {
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	defer srv.Close()
 	got := FanOut(NewClient(), srv.URL, []string{"/a", "/b", "/c"})
-	fmt.Printf("succeeded: %v\n", got)
+	fmt.Fprintf(os.Stdout, "succeeded: %v\n", got)
 }

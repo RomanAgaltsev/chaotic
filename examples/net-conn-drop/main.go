@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
 )
 
 // ReadWithRetry reads up to len(buf) bytes, retrying on error up to attempts
@@ -23,5 +24,5 @@ func ReadWithRetry(c net.Conn, buf []byte, attempts int) (int, error) {
 }
 
 func main() {
-	fmt.Println("run `go test` in this directory to see a read loop survive a chaos drop")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see a read loop survive a chaos drop")
 }

@@ -6,9 +6,10 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/grpc"
+
 	chaosgrpc "github.com/RomanAgaltsev/chaotic/adapter/grpc"
 	"github.com/RomanAgaltsev/chaotic/engine"
-	"google.golang.org/grpc"
 )
 
 func TestZeroAllocUnderChaosOffUnaryClient(t *testing.T) {

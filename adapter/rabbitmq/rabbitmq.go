@@ -6,10 +6,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/RomanAgaltsev/chaotic/fault"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/RomanAgaltsev/chaotic/engine"
+	"github.com/RomanAgaltsev/chaotic/fault"
 )
 
 // Channel wraps an *amqp.Channel so the chaotic engine is consulted on each

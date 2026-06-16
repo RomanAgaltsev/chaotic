@@ -8,8 +8,9 @@ package rabbitmq
 import (
 	"context"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 type Channel struct {

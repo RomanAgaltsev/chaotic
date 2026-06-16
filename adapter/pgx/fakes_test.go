@@ -2,6 +2,7 @@ package pgx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	pgxv5 "github.com/jackc/pgx/v5"
@@ -162,7 +163,7 @@ type fakeTx struct {
 }
 
 func (f *fakeTx) Begin(ctx context.Context) (pgxv5.Tx, error) {
-	return nil, fmt.Errorf("fakeTx.Begin not stubbed")
+	return nil, errors.New("fakeTx.Begin not stubbed")
 }
 
 func (f *fakeTx) Commit(ctx context.Context) error {
@@ -180,7 +181,7 @@ func (f *fakeTx) Rollback(ctx context.Context) error {
 }
 
 func (f *fakeTx) CopyFrom(ctx context.Context, tableName pgxv5.Identifier, columnNames []string, rowSrc pgxv5.CopyFromSource) (int64, error) {
-	return 0, fmt.Errorf("fakeTx.CopyFrom not stubbed")
+	return 0, errors.New("fakeTx.CopyFrom not stubbed")
 }
 
 func (f *fakeTx) SendBatch(ctx context.Context, b *pgxv5.Batch) pgxv5.BatchResults {
@@ -195,7 +196,7 @@ func (f *fakeTx) LargeObjects() pgxv5.LargeObjects {
 }
 
 func (f *fakeTx) Prepare(ctx context.Context, name, sql string) (*pgconn.StatementDescription, error) {
-	return nil, fmt.Errorf("fakeTx.Prepare not stubbed")
+	return nil, errors.New("fakeTx.Prepare not stubbed")
 }
 
 func (f *fakeTx) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {

@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -36,5 +37,5 @@ func ReadUserWithRetry(ctx context.Context, coll *chaosmongo.Collection, id, att
 }
 
 func main() {
-	fmt.Println("run `go test` in this directory to see read-with-retry survive a chaos failover")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see read-with-retry survive a chaos failover")
 }

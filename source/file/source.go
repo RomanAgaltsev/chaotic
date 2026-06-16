@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/RomanAgaltsev/chaotic/engine"
 	"gopkg.in/yaml.v3"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 // Document is the YAML schema: a meta block and a list of rule specs.
@@ -23,7 +24,7 @@ type Meta struct {
 
 // Load reads and parses path into a RuleSet.
 func Load(path string) (engine.RuleSet, error) {
-	data, err := os.ReadFile(path) //nolint:gosec // -
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

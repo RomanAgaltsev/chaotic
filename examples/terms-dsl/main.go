@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/RomanAgaltsev/chaotic/chaos"
 	"github.com/RomanAgaltsev/chaotic/engine"
@@ -25,7 +26,7 @@ func Activate(eng *engine.Engine, spec string) error {
 }
 
 func main() {
-	fmt.Println("run `go test` in this directory to see a one-liner activate chaos")
+	fmt.Fprintln(os.Stdout, "run `go test` in this directory to see a one-liner activate chaos")
 	_ = context.Background
 	_ = chaos.Point
 }

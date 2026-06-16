@@ -5,9 +5,9 @@
 package redis
 
 import (
-	"github.com/RomanAgaltsev/chaotic/engine"
-
 	goredis "github.com/redis/go-redis/v9"
+
+	"github.com/RomanAgaltsev/chaotic/engine"
 )
 
 func NewHook(_ *engine.Engine) goredis.Hook {
