@@ -79,3 +79,19 @@ func TestOpAcquire(t *testing.T) {
 		t.Errorf("Attrs = %v, want empty", op.Attrs)
 	}
 }
+
+func TestOpTrace(t *testing.T) {
+	op := opTrace("SELECT id FROM widgets WHERE id=$1", 1)
+	if op.Kind != engine.OpPGX {
+		t.Errorf("Kind = %v, want OpPGX", op.Kind)
+	}
+	if op.Method != "trace" { //nolint:usestdlibvars // -
+		t.Errorf("Method = %q, want %q", op.Method, "trace")
+	}
+	if op.Attrs["args"] != "1" {
+		t.Errorf("args = %q, want %q", op.Attrs["args"], "1")
+	}
+	if op.Attrs["sql"] != "SELECT id FROM widgets WHERE id=$1" {
+		t.Errorf("sql attr not preserved: %q", op.Attrs["sql"])
+	}
+}

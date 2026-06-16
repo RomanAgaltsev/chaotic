@@ -73,3 +73,25 @@ func opAcquire() engine.Op {
 		Attrs:  nil,
 	}
 }
+
+// opTrace builds the Op for the config-level QueryTracer path. The tracer fires
+// for Query, QueryRow and Exec indistinguishably, so Method is the fixed label
+// "trace" (rule authors can match or exclude the config path with it). Name and
+// the table attr come from the same SQL classifier the direct path uses.
+func opTrace(sql string, nArgs int) engine.Op {
+	c := sqlclass.Classify(sql)
+	name := c.Verb
+	if c.Table != "" {
+		name = c.Verb + " " + c.Table
+	}
+	return engine.Op{
+		Kind:   engine.OpPGX,
+		Name:   name,
+		Method: "trace",
+		Attrs: map[string]string{
+			"table": c.Table,
+			"args":  strconv.Itoa(nArgs),
+			"sql":   sql,
+		},
+	}
+}

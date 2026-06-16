@@ -153,6 +153,18 @@ Inject the real pool in production and `chaospgx.WrapPool(pool, eng)` in tests.
 transaction path (`Begin`/`BeginTx`) and `Acquire` keep the concrete
 `*chaospgx.Pool` type by design — see the package docs.
 
+#### Config-level chaos (no type change)
+
+​```go
+cfg, _ := pgxpool.ParseConfig(dsn)
+cfg = chaospgx.InstrumentPoolConfig(cfg, eng) // wires DialFunc chaos + a latency tracer
+pool, _ := pgxpool.NewWithConfig(ctx, cfg)    // still *pgxpool.Pool
+​```
+
+Covers transport faults (latency, drop/reset) and query latency. For
+per-operation error injection, use `WrapPool` instead — a `pgx.QueryTracer`
+cannot change a query's result.
+
 ### Redis (go-redis v9)
 
 ```go
