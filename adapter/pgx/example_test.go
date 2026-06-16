@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	pgxpool "github.com/jackc/pgx/v5/pgxpool"
 
@@ -60,4 +61,22 @@ func ExampleQuerier() {
 
 	fmt.Println("inject *pgxpool.Pool in prod, chaospgx.WrapPool(pool, eng) in tests")
 	// Output: inject *pgxpool.Pool in prod, chaospgx.WrapPool(pool, eng) in tests
+}
+
+// Example_instrumentPoolConfig shows adding chaos at the pgx config level so the
+// resulting pool stays a genuine *pgxpool.Pool — no consumer type change.
+func Example_instrumentPoolConfig() {
+	cfg, _ := pgxpool.ParseConfig("postgres://u:p@localhost:5432/db")
+
+	eng := engine.New().AddRule(engine.NewRule(
+		engine.MatchKind(engine.OpPGX),
+		engine.WithFault(fault.Latency(25*time.Millisecond)),
+	).Named("slow"))
+
+	// Wire chaos into the config; returns the SAME *pgxpool.Config.
+	cfg = chaospgx.InstrumentPoolConfig(cfg, eng)
+
+	// pool, _ := pgxpool.NewWithConfig(ctx, cfg) // still *pgxpool.Pool
+	fmt.Println(cfg.ConnConfig.Tracer != nil)
+	// Output: true
 }
