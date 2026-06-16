@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/RomanAgaltsev/chaotic/compare/adapter/pgx/v1.2.1...adapter/pgx/v1.3.0) (2026-06-16)
+
+
+### Features
+
+* pgx querier interface ([#16](https://github.com/RomanAgaltsev/chaotic/issues/16)) ([ab07aca](https://github.com/RomanAgaltsev/chaotic/commit/ab07acae9e382930db215f2d6fb3a1664b38c5e7))
+
 ## [1.2.1](https://github.com/RomanAgaltsev/chaotic/compare/adapter/pgx/v1.2.0...adapter/pgx/v1.2.1) (2026-06-15)
 
 
