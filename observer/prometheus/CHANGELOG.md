@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/RomanAgaltsev/chaotic/compare/observer/prometheus/v1.3.0...observer/prometheus/v1.3.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* linter issues from new config ([#20](https://github.com/RomanAgaltsev/chaotic/issues/20)) ([2d82a8c](https://github.com/RomanAgaltsev/chaotic/commit/2d82a8ce3186eb693e36fa426b135be2aee3e159))
+
 ## [1.3.0](https://github.com/RomanAgaltsev/chaotic/compare/observer/prometheus/v1.2.0...observer/prometheus/v1.3.0) (2026-06-12)
 
 
