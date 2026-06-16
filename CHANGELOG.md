@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.29.0...v1.30.0) (2026-06-16)
+
+
+### Features
+
+* pgx instrument pool config ([#18](https://github.com/RomanAgaltsev/chaotic/issues/18)) ([54e2a22](https://github.com/RomanAgaltsev/chaotic/commit/54e2a22219134ebacd7ce251f9a49855da47a880))
+
 ## [1.29.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.28.1...v1.29.0) (2026-06-16)
 
 
