@@ -8,7 +8,7 @@ replace github.com/RomanAgaltsev/chaotic => ../..
 
 require (
 	github.com/RomanAgaltsev/chaotic v0.0.0-00010101000000-000000000000
-	golang.org/x/tools v0.46.0
+	golang.org/x/tools v0.47.0
 )
 
 require (
