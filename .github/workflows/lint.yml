@@ -13,7 +13,7 @@ jobs:
     outputs:
       modules: ${{ steps.set.outputs.modules }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: set
         run: |
           mods=$(find . -name go.mod -not -path '*/vendor/*' -not -path '*/testdata/*' -exec dirname {} \; \
@@ -30,7 +30,7 @@ jobs:
     env:
       GOWORK: off
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version: "stable"
