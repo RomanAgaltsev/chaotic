@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.0](https://github.com/RomanAgaltsev/chaotic/compare/v1.30.1...v1.31.0) (2026-07-14)
+
+
+### Features
+
+* bigo complexity budgets on hot paths ([#31](https://github.com/RomanAgaltsev/chaotic/issues/31)) ([0d63300](https://github.com/RomanAgaltsev/chaotic/commit/0d63300dccd59301d0a1b1439e01f050e0c65af4))
+
 ## [1.30.1](https://github.com/RomanAgaltsev/chaotic/compare/v1.30.0...v1.30.1) (2026-06-16)
 
 
