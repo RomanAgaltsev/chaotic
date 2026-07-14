@@ -41,7 +41,12 @@ jobs:
       - name: format check
         working-directory: ${{ matrix.module }}
         run: |
-          golangci-lint fmt ./...
+          # When a .custom-gcl.yml is present, golangci-lint-action builds a
+          # custom binary at bin/custom-gcl and does not put plain golangci-lint
+          # on PATH. Use the custom binary if it exists, else the standard one.
+          gcl="$GITHUB_WORKSPACE/bin/custom-gcl"
+          [ -x "$gcl" ] || gcl=golangci-lint
+          "$gcl" fmt ./...
           git diff --exit-code
 
   lint-success:
