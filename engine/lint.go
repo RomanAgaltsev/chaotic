@@ -52,6 +52,7 @@ type Report struct {
 // OK reports whether the report contains no SeverityHigh findings. Authoring
 // tools can gate on this to fail a build on a high-severity hazard while
 // tolerating warnings.
+//
 //bigo:max O(n) where n=len(r.Findings)
 func (r Report) OK() bool {
 	for _, f := range r.Findings {

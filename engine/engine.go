@@ -231,6 +231,7 @@ func (e *Engine) passOrTrack() Action {
 // chain and those (result mutators) applied to the wrapped call's result after a
 // successful call. When no fault is a mutator (the common case) the original
 // slice is returned unchanged, so the firing path allocates nothing extra.
+//
 //bigo:max O(n) where n=len(faults)
 func partitionFaults(faults []fault.Fault) (before, mutators []fault.Fault) {
 	hasMutator := false
