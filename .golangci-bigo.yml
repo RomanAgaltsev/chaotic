@@ -1,0 +1,21 @@
+# Dedicated golangci-lint config for the bigo complexity-budget check.
+# Run via the custom-gcl binary (built from .custom-gcl.yml), NOT the stock
+# golangci-lint-action: a module plugin cannot be hosted by the stock binary.
+#   golangci-lint custom && ./bin/custom-gcl run --config .golangci-bigo.yml ./...
+version: "2"
+
+run:
+  timeout: 5m
+  relative-path-mode: gomod
+  modules-download-mode: readonly
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - bigo
+  settings:
+    custom:
+      bigo:
+        type: module
+        description: Checks //bigo:max asymptotic complexity budgets.
