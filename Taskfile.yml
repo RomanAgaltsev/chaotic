@@ -125,6 +125,12 @@ tasks:
     cmds:
       - govulncheck ./...
 
+  bigo:
+    desc: "bigo complexity-budget check (custom-gcl module plugin)"
+    cmds:
+      - golangci-lint custom
+      - ./bin/custom-gcl run --config .golangci-bigo.yml ./...
+
   # --- Aggregates: loop over every module ---
 
   test:all:
@@ -181,6 +187,7 @@ tasks:
     cmds:
       - task: tidy:check:all
       - task: lint:all
+      - task: bigo
       - task: test:all
       - task: chaos-off:all
       - task: vuln:all

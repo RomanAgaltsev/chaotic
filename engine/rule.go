@@ -52,6 +52,7 @@ func (r *Rule) matches(ctx context.Context, op Op) bool {
 
 // MatchKind matches Ops whose Kind appears in kinds. With zero arguments,
 // matches nothing.
+//bigo:max O(1)
 func MatchKind(kinds ...Kind) RuleOption {
 	ks := append([]Kind(nil), kinds...)
 	return func(r *Rule) {
@@ -68,6 +69,7 @@ func MatchKind(kinds ...Kind) RuleOption {
 
 // MatchName matches Ops whose Name satisfies path.Match(pattern, Name).
 // Patterns support *, ?, and [...]. * does not cross /.
+//bigo:max O(1)
 func MatchName(pattern string) RuleOption {
 	return func(r *Rule) {
 		r.matchers = append(r.matchers, func(_ context.Context, op Op) bool {
@@ -78,6 +80,7 @@ func MatchName(pattern string) RuleOption {
 }
 
 // MatchAttr matches Ops whose Attrs[key] equals value.
+//bigo:max O(1)
 func MatchAttr(key, value string) RuleOption {
 	return func(r *Rule) {
 		r.matchers = append(r.matchers, func(_ context.Context, op Op) bool {

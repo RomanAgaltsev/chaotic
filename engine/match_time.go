@@ -10,6 +10,7 @@ import (
 // process's local time zone. Useful for scheduled chaos, e.g. "only inject
 // between 02:00 and 04:00 during the canary window". A window where start == end
 // matches nothing; a window spanning midnight (start > end) is supported.
+//bigo:max O(1)
 func MatchTimeWindow(startH, startM, endH, endM int) RuleOption {
 	return matchTimeWindowAt(startH, startM, endH, endM, time.Now)
 }

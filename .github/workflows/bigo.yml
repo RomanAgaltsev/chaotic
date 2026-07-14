@@ -1,0 +1,29 @@
+name: bigo
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  bigo:
+    runs-on: ubuntu-latest
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: golangci/setup-golangci-lint@v1
+        id: gcl
+        with:
+          version: v2.12.2
+      - name: bigo complexity budgets
+        env:
+          GOLANGCI_LINT: ${{ steps.gcl.outputs.golangci-lint-path }}
+        run: |
+          "$GOLANGCI_LINT" custom
+          ./bin/custom-gcl run --config .golangci-bigo.yml ./...

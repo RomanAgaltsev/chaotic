@@ -1,0 +1,10 @@
+# Builds a custom golangci-lint binary embedding the bigo plugin.
+# Recipe: bigo README "Use with golangci-lint".
+# The bigo plugin is pinned: verdicts must not drift under consumers.
+version: v2.12.2
+name: custom-gcl
+destination: ./bin
+plugins:
+  - module: github.com/RomanAgaltsev/bigo
+    import: github.com/RomanAgaltsev/bigo/plugin
+    version: v1.13.1
