@@ -17,13 +17,11 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - uses: golangci/setup-golangci-lint@v1
-        id: gcl
+      - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.12.2
+          install-only: true
       - name: bigo complexity budgets
-        env:
-          GOLANGCI_LINT: ${{ steps.gcl.outputs.golangci-lint-path }}
         run: |
-          "$GOLANGCI_LINT" custom
+          golangci-lint custom
           ./bin/custom-gcl run --config .golangci-bigo.yml ./...
