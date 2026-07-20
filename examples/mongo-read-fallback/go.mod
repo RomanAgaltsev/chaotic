@@ -8,7 +8,7 @@ require (
 	github.com/RomanAgaltsev/chaotic v0.0.0
 	github.com/RomanAgaltsev/chaotic/adapter/mongo v0.0.0
 	github.com/testcontainers/testcontainers-go/modules/mongodb v0.43.0
-	go.mongodb.org/mongo-driver/v2 v2.7.0
+	go.mongodb.org/mongo-driver/v2 v2.8.0
 )
 
 require (
