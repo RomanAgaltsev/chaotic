@@ -16,7 +16,7 @@ func TestReloadReturnsErrorBadConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	eng := engine.New()
-	if _, err := reload(path, eng); err == nil {
+	if _, err := reload(path, eng, nil); err == nil {
 		t.Fatal("expected reload error for out-of-range probability, got nil")
 	}
 }

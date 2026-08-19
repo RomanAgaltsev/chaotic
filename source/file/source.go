@@ -22,20 +22,25 @@ type Meta struct {
 	Version int `yaml:"version"`
 }
 
-// Load reads and parses path into a RuleSet.
-func Load(path string) (engine.RuleSet, error) {
+// Load reads and parses path into a RuleSet. Options are forwarded to Parse.
+func Load(path string, opts ...Option) (engine.RuleSet, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	return Parse(data)
+	return Parse(data, opts...)
 }
 
 // Parse builds a validated RuleSet from YAML bytes. Rule names must be unique.
-func Parse(data []byte) (engine.RuleSet, error) {
+// Pass WithLint to run the engine.LintSpecs blast-radius check over the
+// document before any rule is built.
+func Parse(data []byte, opts ...Option) (engine.RuleSet, error) {
 	var doc Document
 	if err := yaml.Unmarshal(data, &doc); err != nil {
 		return nil, fmt.Errorf("chaotic: parse rules: %w", err)
+	}
+	if err := newConfig(opts).gate(doc.Rules); err != nil {
+		return nil, err
 	}
 	rules := make([]engine.Rule, 0, len(doc.Rules))
 	seen := map[string]bool{}
