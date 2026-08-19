@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -146,5 +147,114 @@ func TestPerRuleWritesNeedWritable(t *testing.T) {
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/rules/x", strings.NewReader(`kind(sql)=conndrop`)))
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("PUT on read-only = %d, want 405", rec.Code)
+	}
+}
+
+// hazardTerms is a rule LintSpecs rates SeverityHigh.
+const hazardTerms = `panic("boom")`
+
+const hazardYAMLDoc = "rules:\n  - name: wipeout\n    faults:\n      - type: panic\n        message: boom\n"
+
+// installedRules returns the rule names the handler currently holds, read
+// through GET /rules — the established idiom in this file, since engine.Engine
+// exposes no rule-count accessor.
+func installedRules(t *testing.T, h http.Handler) []string {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/rules", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /rules = %d %s", rec.Code, rec.Body.String())
+	}
+	var out []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatalf("decode GET /rules: %v (body %q)", err, rec.Body.String())
+	}
+	names := make([]string, 0, len(out))
+	for _, it := range out {
+		names = append(names, it.Name)
+	}
+	return names
+}
+
+func TestPutRuleLintRejectReturns400AndInstallsNothing(t *testing.T) {
+	eng := engine.New()
+	h := srchttp.New(eng, srchttp.WithWritable(true), srchttp.WithLint(engine.LintReject))
+
+	req := httptest.NewRequest(http.MethodPut, "/rules/wipeout", strings.NewReader(hazardTerms))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+	if !strings.Contains(rec.Body.String(), "wipeout") {
+		t.Errorf("body %q does not name the offending rule", rec.Body.String())
+	}
+	if got := installedRules(t, h); len(got) != 0 {
+		t.Errorf("handler holds %v after a rejected PUT, want none", got)
+	}
+}
+
+func TestPutRuleLintWarnReturns200WithFindings(t *testing.T) {
+	eng := engine.New()
+	h := srchttp.New(eng, srchttp.WithWritable(true), srchttp.WithLint(engine.LintWarn))
+
+	req := httptest.NewRequest(http.MethodPut, "/rules/wipeout", strings.NewReader(hazardTerms))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d (body %q)", rec.Code, http.StatusOK, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "wipeout") {
+		t.Errorf("body %q does not carry the findings", rec.Body.String())
+	}
+	if got := installedRules(t, h); len(got) != 1 {
+		t.Errorf("handler holds %v, want 1 rule (LintWarn must still install)", got)
+	}
+}
+
+func TestPutRuleLintOffKeeps204(t *testing.T) {
+	eng := engine.New()
+	h := srchttp.New(eng, srchttp.WithWritable(true))
+
+	req := httptest.NewRequest(http.MethodPut, "/rules/wipeout", strings.NewReader(hazardTerms))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d (default must be unchanged)", rec.Code, http.StatusNoContent)
+	}
+}
+
+func TestPostWholeLintRejectLeavesPriorRulesIntact(t *testing.T) {
+	eng := engine.New()
+	h := srchttp.New(eng, srchttp.WithWritable(true), srchttp.WithLint(engine.LintReject))
+
+	// Install one benign rule first.
+	good := httptest.NewRequest(http.MethodPut, "/rules/slowdown", strings.NewReader(`kind(sql)=latency(10ms)`))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, good)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("setup PUT status = %d, want 204 (body %q)", rec.Code, rec.Body.String())
+	}
+
+	// Now POST a hazardous whole document.
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(hazardYAMLDoc))
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+	if got := installedRules(t, h); len(got) != 1 || got[0] != "slowdown" {
+		t.Fatalf("handler holds %v, want just the pre-existing \"slowdown\"", got)
+	}
+	body := httptest.NewRecorder()
+	h.ServeHTTP(body, httptest.NewRequest(http.MethodGet, "/", nil))
+	if !strings.Contains(body.Body.String(), "slowdown") {
+		t.Errorf("served document lost the prior rule: %q", body.Body.String())
 	}
 }
