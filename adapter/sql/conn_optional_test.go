@@ -157,3 +157,18 @@ func TestStmtForwardsNamedValueChecker(t *testing.T) {
 		t.Errorf("CheckNamedValue = %v, want ErrSkip (fullStmt is not a checker)", err)
 	}
 }
+
+func TestPingerOnlyWhenWrappedCanPing(t *testing.T) {
+	full := openChaosConn(t, "chaos:optional-full-3", "optional-full")
+	if p, ok := full.(dbdrv.Pinger); !ok {
+		t.Error("wrapping a Pinger produced a conn that is not a Pinger")
+	} else if err := p.Ping(context.Background()); err != nil {
+		t.Errorf("Ping: %v", err)
+	}
+
+	bare := openChaosConn(t, "chaos:optional-bare-3", "optional-bare")
+	if _, ok := bare.(dbdrv.Pinger); ok {
+		t.Error("wrapping a non-Pinger produced a conn claiming driver.Pinger; " +
+			"db.Ping() would report healthy without ever pinging")
+	}
+}

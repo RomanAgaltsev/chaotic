@@ -59,15 +59,18 @@ func TestChaosConnBeginTxFallsBackToBegin(t *testing.T) {
 }
 
 func TestChaosConnPing(t *testing.T) {
-	t.Run("non-pinger is a no-op", func(t *testing.T) {
+	t.Run("non-pinger conn is not a Pinger at all", func(t *testing.T) {
+		// The base type must not carry Ping: database/sql has no way to say
+		// "ping unsupported", so implementing it would report a healthy
+		// database that was never contacted.
 		c := &chaosConn{wrapped: &legacyConn{}, eng: engine.New()}
-		if err := c.Ping(context.Background()); err != nil {
-			t.Fatalf("Ping() = %v, want nil", err)
+		if _, ok := any(c).(driver.Pinger); ok {
+			t.Fatal("chaosConn claims driver.Pinger; only chaosConnPinger may")
 		}
 	})
 	t.Run("pinger is delegated to", func(t *testing.T) {
 		inner := &legacyPinger{}
-		c := &chaosConn{wrapped: inner, eng: engine.New()}
+		c := &chaosConnPinger{&chaosConn{wrapped: inner, eng: engine.New()}}
 		if err := c.Ping(context.Background()); err != nil {
 			t.Fatalf("Ping() = %v, want nil", err)
 		}
