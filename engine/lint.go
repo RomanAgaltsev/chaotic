@@ -63,6 +63,22 @@ func (r Report) OK() bool {
 	return true
 }
 
+// Summary renders every finding as one semicolon-separated line, suitable for
+// an error message or an HTTP response body. An empty report renders as
+// "no findings".
+//
+//bigo:max O(n) where n=len(r.Findings)
+func (r Report) Summary() string {
+	if len(r.Findings) == 0 {
+		return "no findings"
+	}
+	parts := make([]string, 0, len(r.Findings))
+	for _, f := range r.Findings {
+		parts = append(parts, fmt.Sprintf("[%s] %s: %s", f.Severity, f.Rule, f.Message))
+	}
+	return strings.Join(parts, "; ")
+}
+
 func lintName(name string) string {
 	if name == "" {
 		return "<unnamed>"
