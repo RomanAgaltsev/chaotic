@@ -198,7 +198,9 @@ func parseTerm(s string, spec *engine.RuleSpec) error {
 // string: without that, an odd number of escaped quotes inverts inStr, the
 // closing ')' is swallowed, and the "->" is never seen.
 //
-//nolint:intrange // the loop index is advanced inside the body to skip an escaped byte and the '>' of "->"
+// The loop is an explicit index loop, not `for i := range len(s)`: the body
+// advances i to skip an escaped byte and the '>' of "->", and a range-over-int
+// rebinds i each iteration, which would silently discard both increments.
 func splitTopArrow(s string) []string {
 	var parts []string
 	depth, inStr, start := 0, false, 0

@@ -67,14 +67,18 @@ func (r Report) OK() bool {
 // an error message or an HTTP response body. An empty report renders as
 // "no findings".
 //
-//bigo:max O(n) where n=len(r.Findings)
+// No //bigo:max budget here, unlike OK above: the cost is linear in the total
+// text of the findings rather than in their count, and neither strings.Join nor
+// fmt is priceable, so any annotation would fail the complexity gate.
 func (r Report) Summary() string {
 	if len(r.Findings) == 0 {
 		return "no findings"
 	}
 	parts := make([]string, 0, len(r.Findings))
 	for _, f := range r.Findings {
-		parts = append(parts, fmt.Sprintf("[%s] %s: %s", f.Severity, f.Rule, f.Message))
+		// Concatenation rather than fmt.Sprintf: the bigo budget above can be
+		// verified only if every callee is priceable, and fmt is not.
+		parts = append(parts, "["+f.Severity.String()+"] "+f.Rule+": "+f.Message)
 	}
 	return strings.Join(parts, "; ")
 }

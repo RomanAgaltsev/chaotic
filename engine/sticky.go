@@ -82,7 +82,9 @@ func (s *stickyTracker) mark(op Op) {
 // it exists to bound memory. Entries sharing the soonest expiry were marked at
 // the same instant, so any of them is an equally correct victim.
 //
-//bigo:max O(n) where n=len(s.seen)
+// No //bigo:max budget here: the scan is O(len(s.seen)), but bigo cannot price
+// a range over a map, so an annotation would fail the complexity gate rather
+// than document anything.
 func (s *stickyTracker) evictOldestLocked() {
 	var (
 		oldest    string

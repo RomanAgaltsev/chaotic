@@ -71,7 +71,6 @@ func writeLintFindings(w http.ResponseWriter, rep engine.Report) bool {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	//nolint:gosec // G705: Content-Type is pinned to text/plain above, so the echoed rule names cannot render as markup
 	_, _ = io.WriteString(w, rep.Summary()+"\n")
 	return true
 }
