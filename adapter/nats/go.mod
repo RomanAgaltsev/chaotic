@@ -2,7 +2,7 @@ module github.com/RomanAgaltsev/chaotic/adapter/nats
 
 go 1.26
 
-toolchain go1.26.5
+toolchain go1.26.6
 
 replace github.com/RomanAgaltsev/chaotic => ../..
 

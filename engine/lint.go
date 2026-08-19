@@ -63,6 +63,26 @@ func (r Report) OK() bool {
 	return true
 }
 
+// Summary renders every finding as one semicolon-separated line, suitable for
+// an error message or an HTTP response body. An empty report renders as
+// "no findings".
+//
+// No //bigo:max budget here, unlike OK above: the cost is linear in the total
+// text of the findings rather than in their count, and neither strings.Join nor
+// fmt is priceable, so any annotation would fail the complexity gate.
+func (r Report) Summary() string {
+	if len(r.Findings) == 0 {
+		return "no findings"
+	}
+	parts := make([]string, 0, len(r.Findings))
+	for _, f := range r.Findings {
+		// Concatenation rather than fmt.Sprintf: the bigo budget above can be
+		// verified only if every callee is priceable, and fmt is not.
+		parts = append(parts, "["+f.Severity.String()+"] "+f.Rule+": "+f.Message)
+	}
+	return strings.Join(parts, "; ")
+}
+
 func lintName(name string) string {
 	if name == "" {
 		return "<unnamed>"

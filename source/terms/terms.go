@@ -66,9 +66,10 @@ func splitCall(s string) (name, args string, err error) {
 }
 
 // Parse turns a terms string into RuleSpecs (the declarative form), so the same
-// BuildRule validation and the LintSpecs blast-radius check apply. Rules are
-// separated by ';'. See the package doc for the grammar.
-func Parse(s string) ([]engine.RuleSpec, error) {
+// BuildRule validation applies. Rules are separated by ';'. Pass WithLint to
+// additionally run the engine.LintSpecs blast-radius check over the result.
+// See the package doc for the grammar.
+func Parse(s string, opts ...Option) ([]engine.RuleSpec, error) {
 	var specs []engine.RuleSpec
 	for _, raw := range splitTop(s, ';') {
 		rule := strings.TrimSpace(raw)
@@ -83,6 +84,9 @@ func Parse(s string) ([]engine.RuleSpec, error) {
 	}
 	if len(specs) == 0 {
 		return nil, errors.New("terms: empty ruleset")
+	}
+	if err := newConfig(opts).gate(specs); err != nil {
+		return nil, err
 	}
 	return specs, nil
 }
@@ -190,14 +194,24 @@ func parseTerm(s string, spec *engine.RuleSpec) error {
 
 // splitTopArrow splits s on every top-level "->" — depth 0, i.e. not inside
 // parentheses or a double-quoted string — mirroring splitTop's depth-awareness.
+// A backslash inside a string escapes the next byte, so a \" does not close the
+// string: without that, an odd number of escaped quotes inverts inStr, the
+// closing ')' is swallowed, and the "->" is never seen.
+//
+// The loop is an explicit index loop, not `for i := range len(s)`: the body
+// advances i to skip an escaped byte and the '>' of "->", and a range-over-int
+// rebinds i each iteration, which would silently discard both increments.
 func splitTopArrow(s string) []string {
 	var parts []string
 	depth, inStr, start := 0, false, 0
-	for i := range len(s) {
+	for i := 0; i < len(s); i++ {
 		c := s[i]
 		switch {
 		case inStr:
-			if c == '"' {
+			switch c {
+			case '\\':
+				i++ // skip the escaped byte
+			case '"':
 				inStr = false
 			}
 		case c == '"':
@@ -294,8 +308,9 @@ func unquote(s string) (string, error) {
 // path when you want rules to AddRule directly. Validation (unknown kinds, bad
 // durations, out-of-range probabilities) is performed by BuildRule, so a
 // structurally valid terms string can still fail here with a clear error.
-func Compile(s string) ([]engine.Rule, error) {
-	specs, err := Parse(s)
+// Options are forwarded to Parse, which is where linting happens.
+func Compile(s string, opts ...Option) ([]engine.Rule, error) {
+	specs, err := Parse(s, opts...)
 	if err != nil {
 		return nil, err
 	}

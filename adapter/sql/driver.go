@@ -60,15 +60,32 @@ func (d *chaosDriver) Open(name string) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &chaosConn{
+	base := &chaosConn{
 		wrapped: c,
 		eng:     d.eng,
-	}, nil
+	}
+	if _, ok := c.(driver.Pinger); ok {
+		return &chaosConnPinger{base}, nil
+	}
+	return base, nil
 }
 
 type chaosConn struct {
 	wrapped driver.Conn
 	eng     *engine.Engine
+}
+
+// chaosConnPinger is the conn returned when — and only when — the wrapped conn
+// is a driver.Pinger. chaosConn deliberately has no Ping method: database/sql
+// offers no way to signal "ping unsupported" from a Ping implementation, so a
+// conn that always implements Pinger would report a healthy database it never
+// contacted.
+type chaosConnPinger struct{ *chaosConn }
+
+// Ping forwards to the wrapped conn, which Open has already established is a
+// driver.Pinger.
+func (c *chaosConnPinger) Ping(ctx context.Context) error {
+	return c.wrapped.(driver.Pinger).Ping(ctx)
 }
 
 func (c *chaosConn) Prepare(query string) (driver.Stmt, error) {
@@ -85,13 +102,6 @@ func (c *chaosConn) Close() error {
 
 func (c *chaosConn) Begin() (driver.Tx, error) {
 	return c.wrapped.Begin() //nolint:staticcheck // required by driver.Conn interface; wrapped driver may not implement ConnBeginTx
-}
-
-func (c *chaosConn) Ping(ctx context.Context) error {
-	if p, ok := c.wrapped.(driver.Pinger); ok {
-		return p.Ping(ctx)
-	}
-	return nil
 }
 
 func (c *chaosConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {

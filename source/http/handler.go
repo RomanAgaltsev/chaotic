@@ -7,6 +7,11 @@
 // introspection: GET /rules lists names+hits, GET /rules/{name}/count returns a
 // rule's hit count.
 //
+// Linting: pass WithLint to apply the engine.LintSpecs blast-radius check to
+// rules arriving over HTTP. Under LintWarn a successful write returns 200 with
+// the findings in the body instead of 204; under LintReject a hazardous rule is
+// refused with 400 and nothing is installed.
+//
 // The handler routes with an internal http.ServeMux rooted at "/", so mount it
 // behind http.StripPrefix:
 //
@@ -31,6 +36,7 @@ type Handler struct {
 	eng      *engine.Engine
 	writable bool
 	auth     func(token string) bool
+	lint     engine.LintMode
 	mux      *http.ServeMux
 
 	mu      sync.RWMutex
@@ -47,6 +53,27 @@ func WithWritable(w bool) Option { return func(h *Handler) { h.writable = w } }
 
 // WithAuth requires a bearer token accepted by check on every request.
 func WithAuth(check func(token string) bool) Option { return func(h *Handler) { h.auth = check } }
+
+// WithLint sets the blast-radius lint policy applied to rules arriving over
+// HTTP. engine.LintWarn installs the rules and returns the findings in the
+// response body with status 200; engine.LintReject refuses the request with
+// status 400 and installs nothing. Default: engine.LintOff, which preserves
+// the 204 No Content success response.
+func WithLint(mode engine.LintMode) Option { return func(h *Handler) { h.lint = mode } }
+
+// writeLintFindings reports a non-empty lint report as a 200 body and returns
+// true; an empty report writes nothing and returns false, leaving the caller to
+// send its usual 204. Content-Type is pinned to text/plain so the findings —
+// which echo request-supplied rule names — can never be interpreted as markup.
+func writeLintFindings(w http.ResponseWriter, rep engine.Report) bool {
+	if len(rep.Findings) == 0 {
+		return false
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = io.WriteString(w, rep.Summary()+"\n")
+	return true
+}
 
 // New returns a Handler bound to eng.
 func New(eng *engine.Engine, opts ...Option) *Handler {
@@ -114,6 +141,15 @@ func (h *Handler) postWhole(w http.ResponseWriter, r *http.Request) {
 		}
 		specs[name] = spec
 	}
+	ordered := make([]engine.RuleSpec, 0, len(order))
+	for _, name := range order {
+		ordered = append(ordered, specs[name])
+	}
+	rep, lerr := engine.LintGate(h.lint, ordered)
+	if lerr != nil {
+		http.Error(w, lerr.Error(), http.StatusBadRequest)
+		return
+	}
 	h.mu.Lock()
 	prevOrder, prevSpecs := h.order, h.specs
 	h.order, h.specs = order, specs
@@ -124,6 +160,9 @@ func (h *Handler) postWhole(w http.ResponseWriter, r *http.Request) {
 	h.mu.Unlock()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if writeLintFindings(w, rep) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -224,6 +263,13 @@ func (h *Handler) putRule(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	// The gate runs before the lock because putRule mutates h.specs/h.order
+	// without postWhole's rollback: nothing may change before the decision.
+	rep, lerr := engine.LintGate(h.lint, []engine.RuleSpec{spec})
+	if lerr != nil {
+		http.Error(w, lerr.Error(), http.StatusBadRequest)
+		return
+	}
 	h.mu.Lock()
 	if _, exists := h.specs[name]; !exists {
 		h.order = append(h.order, name)
@@ -233,6 +279,9 @@ func (h *Handler) putRule(w http.ResponseWriter, r *http.Request) {
 	h.mu.Unlock()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if writeLintFindings(w, rep) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

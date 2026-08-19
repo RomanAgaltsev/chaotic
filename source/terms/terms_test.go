@@ -215,3 +215,66 @@ func TestCompileStagedNonFinalNeedsCount(t *testing.T) {
 		t.Fatal("non-final stage with no count should fail BuildRule")
 	}
 }
+
+// A staged term whose message carries an odd number of escaped quotes used to
+// desync splitTopArrow's string tracking against its paren counter, swallowing
+// the closing ')' so the '->' was never split.
+func TestSplitTopArrowHonorsEscapedQuotes(t *testing.T) {
+	specs, err := Parse(`kind(sql)=2*error("a\"b")->panic("x")`)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(specs) != 1 {
+		t.Fatalf("got %d specs, want 1", len(specs))
+	}
+	if n := len(specs[0].Stages); n != 2 {
+		t.Fatalf("got %d stages, want 2 (the -> was not split)", n)
+	}
+	if got := specs[0].Stages[0].Faults[0].Message; got != `a"b` {
+		t.Errorf("stage 0 message = %q, want %q", got, `a"b`)
+	}
+	if got := specs[0].Stages[1].Faults[0].Type; got != "panic" {
+		t.Errorf("stage 1 type = %q, want %q", got, "panic")
+	}
+}
+
+// An even number of escaped quotes always worked, because the desync
+// self-corrected. Pin it so the fix does not regress the case that passed.
+func TestSplitTopArrowEvenEscapesStillWork(t *testing.T) {
+	specs, err := Parse(`kind(sql)=2*error("say \"hi\"")->panic("x")`)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if n := len(specs[0].Stages); n != 2 {
+		t.Fatalf("got %d stages, want 2", n)
+	}
+	if got := specs[0].Stages[0].Faults[0].Message; got != `say "hi"` {
+		t.Errorf("message = %q, want %q", got, `say "hi"`)
+	}
+}
+
+// splitTop and indexTop track paren depth but not strings, which is safe
+// because the grammar puts every quoted string inside parentheses. These cases
+// pin that reasoning so it is not re-derived — and so that a future grammar
+// change allowing a top-level quoted string fails here first.
+func TestSeparatorsInsideQuotedArgsAreSafe(t *testing.T) {
+	for _, tc := range []struct{ in, want string }{
+		{`kind(sql)=error("boom, retry")`, "boom, retry"},
+		{`kind(sql)=error("a;b")`, "a;b"},
+		{`kind(sql)=error("key=value")`, "key=value"},
+		{`kind(sql)=error("ratio 1:2")`, "ratio 1:2"},
+	} {
+		specs, err := Parse(tc.in)
+		if err != nil {
+			t.Errorf("Parse(%q): %v", tc.in, err)
+			continue
+		}
+		if len(specs) != 1 {
+			t.Errorf("Parse(%q): got %d specs, want 1", tc.in, len(specs))
+			continue
+		}
+		if got := specs[0].Faults[0].Message; got != tc.want {
+			t.Errorf("Parse(%q): message = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}

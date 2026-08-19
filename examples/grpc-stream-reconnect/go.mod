@@ -2,10 +2,12 @@ module github.com/RomanAgaltsev/chaotic/examples/grpc-stream-reconnect
 
 go 1.26
 
+toolchain go1.26.6
+
 require (
 	github.com/RomanAgaltsev/chaotic v0.0.0
 	github.com/RomanAgaltsev/chaotic/adapter/grpc v0.0.0
-	google.golang.org/grpc v1.82.0
+	google.golang.org/grpc v1.82.1
 )
 
 require (
