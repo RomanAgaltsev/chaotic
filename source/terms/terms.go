@@ -66,9 +66,10 @@ func splitCall(s string) (name, args string, err error) {
 }
 
 // Parse turns a terms string into RuleSpecs (the declarative form), so the same
-// BuildRule validation and the LintSpecs blast-radius check apply. Rules are
-// separated by ';'. See the package doc for the grammar.
-func Parse(s string) ([]engine.RuleSpec, error) {
+// BuildRule validation applies. Rules are separated by ';'. Pass WithLint to
+// additionally run the engine.LintSpecs blast-radius check over the result.
+// See the package doc for the grammar.
+func Parse(s string, opts ...Option) ([]engine.RuleSpec, error) {
 	var specs []engine.RuleSpec
 	for _, raw := range splitTop(s, ';') {
 		rule := strings.TrimSpace(raw)
@@ -83,6 +84,9 @@ func Parse(s string) ([]engine.RuleSpec, error) {
 	}
 	if len(specs) == 0 {
 		return nil, errors.New("terms: empty ruleset")
+	}
+	if err := newConfig(opts).gate(specs); err != nil {
+		return nil, err
 	}
 	return specs, nil
 }
@@ -294,8 +298,9 @@ func unquote(s string) (string, error) {
 // path when you want rules to AddRule directly. Validation (unknown kinds, bad
 // durations, out-of-range probabilities) is performed by BuildRule, so a
 // structurally valid terms string can still fail here with a clear error.
-func Compile(s string) ([]engine.Rule, error) {
-	specs, err := Parse(s)
+// Options are forwarded to Parse, which is where linting happens.
+func Compile(s string, opts ...Option) ([]engine.Rule, error) {
+	specs, err := Parse(s, opts...)
 	if err != nil {
 		return nil, err
 	}

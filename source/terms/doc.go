@@ -1,7 +1,8 @@
 // Package terms parses a compact one-line chaos rule DSL into engine.RuleSpec /
 // engine.Rule. It is the terse text form behind env-var and HTTP activation;
 // because it decodes to RuleSpec, every parsed rule reuses engine.BuildRule
-// validation and the engine.LintSpecs blast-radius check.
+// validation. The engine.LintSpecs blast-radius check is opt-in — pass
+// WithLint(engine.LintWarn) or WithLint(engine.LintReject) to Parse or Compile.
 //
 // Grammar (v1 — single term per rule):
 //
