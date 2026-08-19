@@ -194,14 +194,22 @@ func parseTerm(s string, spec *engine.RuleSpec) error {
 
 // splitTopArrow splits s on every top-level "->" — depth 0, i.e. not inside
 // parentheses or a double-quoted string — mirroring splitTop's depth-awareness.
+// A backslash inside a string escapes the next byte, so a \" does not close the
+// string: without that, an odd number of escaped quotes inverts inStr, the
+// closing ')' is swallowed, and the "->" is never seen.
+//
+//nolint:intrange // the loop index is advanced inside the body to skip an escaped byte and the '>' of "->"
 func splitTopArrow(s string) []string {
 	var parts []string
 	depth, inStr, start := 0, false, 0
-	for i := range len(s) {
+	for i := 0; i < len(s); i++ {
 		c := s[i]
 		switch {
 		case inStr:
-			if c == '"' {
+			switch c {
+			case '\\':
+				i++ // skip the escaped byte
+			case '"':
 				inStr = false
 			}
 		case c == '"':
