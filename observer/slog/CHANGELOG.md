@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/RomanAgaltsev/chaotic/compare/observer/slog/v1.3.1...observer/slog/v1.4.0) (2026-08-19)
+
+
+### Features
+
+* wire LintSpecs into every rule source and fix the debt trio ([#39](https://github.com/RomanAgaltsev/chaotic/issues/39)) ([209b0be](https://github.com/RomanAgaltsev/chaotic/commit/209b0be93c3e443ec95bd1e221e88850db3ce47b))
+
 ## [1.3.1](https://github.com/RomanAgaltsev/chaotic/compare/observer/slog/v1.3.0...observer/slog/v1.3.1) (2026-06-15)
 
 
