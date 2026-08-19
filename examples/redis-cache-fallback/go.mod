@@ -2,7 +2,7 @@ module github.com/RomanAgaltsev/chaotic/examples/redis-cache-fallback
 
 go 1.26
 
-toolchain go1.26.5
+toolchain go1.26.6
 
 require (
 	github.com/RomanAgaltsev/chaotic v0.0.0

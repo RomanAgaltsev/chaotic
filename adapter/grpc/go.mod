@@ -2,11 +2,11 @@ module github.com/RomanAgaltsev/chaotic/adapter/grpc
 
 go 1.26
 
-toolchain go1.26.5
+toolchain go1.26.6
 
 require (
 	github.com/RomanAgaltsev/chaotic v0.0.0
-	google.golang.org/grpc v1.82.0
+	google.golang.org/grpc v1.82.1
 )
 
 require (
