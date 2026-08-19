@@ -2,10 +2,12 @@ package env_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/RomanAgaltsev/chaotic/engine"
 	"github.com/RomanAgaltsev/chaotic/source/env"
+	"github.com/RomanAgaltsev/chaotic/source/terms"
 )
 
 func TestFromEnvParsesRules(t *testing.T) {
@@ -47,5 +49,26 @@ func TestFromEnvDefaultName(t *testing.T) {
 	}
 	if engine.New(engine.WithRuleSource(rs)).Enabled() == false {
 		t.Fatal("default var name should have loaded the rule")
+	}
+}
+
+func TestFromEnvLintRejectFailsOnHazard(t *testing.T) {
+	t.Setenv("CHAOTIC_RULES", `wipeout: panic("boom")`)
+
+	_, err := env.FromEnv("", terms.WithLint(engine.LintReject))
+	if !errors.Is(err, engine.ErrLintRejected) {
+		t.Fatalf("err = %v, want ErrLintRejected", err)
+	}
+}
+
+func TestFromEnvLintOffIsDefault(t *testing.T) {
+	t.Setenv("CHAOTIC_RULES", `wipeout: panic("boom")`)
+
+	rs, err := env.FromEnv("")
+	if err != nil {
+		t.Fatalf("FromEnv without options rejected a hazard: %v", err)
+	}
+	if rs.Len() != 1 {
+		t.Fatalf("got %d rules, want 1", rs.Len())
 	}
 }
