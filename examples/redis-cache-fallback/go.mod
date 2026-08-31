@@ -1,6 +1,6 @@
 module github.com/RomanAgaltsev/chaotic/examples/redis-cache-fallback
 
-go 1.26
+go 1.26.0
 
 toolchain go1.26.6
 
@@ -15,7 +15,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 )
 
 replace github.com/RomanAgaltsev/chaotic => ../..

@@ -1,6 +1,6 @@
 module github.com/RomanAgaltsev/chaotic/observer/prometheus
 
-go 1.26
+go 1.26.0
 
 toolchain go1.26.6
 
@@ -16,7 +16,8 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.68.0 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	github.com/stretchr/testify v1.12.1 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
