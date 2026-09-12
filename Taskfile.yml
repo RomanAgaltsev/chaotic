@@ -38,6 +38,18 @@ vars:
     - "./examples/slow-body-read"
     - "./examples/terms-dsl"
 
+
+  # -race needs cgo, and cgo needs a C toolchain -- which this workstation has no
+  # gcc for, so the native race tasks cannot even build here. The :docker tasks
+  # run the identical gate in a Linux container, which is also the platform CI
+  # runs on. `task toolchain:check` reports which of them you can use.
+  GO_IMAGE: "golang:1.26"
+  DOCKER_RUN: >-
+    docker run --rm -e GOWORK=off
+    -v "{{.ROOT_DIR | replace "\\" "/"}}:/src"
+    -v go-race-modcache:/go/pkg/mod
+    -v go-race-buildcache:/root/.cache/go-build
+
 tasks:
   default:
     desc: List available tasks
@@ -191,3 +203,27 @@ tasks:
       - task: test:all
       - task: chaos-off:all
       - task: vuln:all
+
+  test:race:docker:
+    desc: "Race + shuffled tests for a module, in a Linux container"
+    cmds:
+      - '{{.DOCKER_RUN}} -w /src/{{.MODULE | default "."}} {{.GO_IMAGE}} go test -race -shuffle=on ./...'
+
+  test:all:docker:
+    desc: "Race tests across all modules, in a Linux container"
+    cmds:
+      - for: { var: MODULES }
+        task: test:race:docker
+        vars: { MODULE: "{{.ITEM}}" }
+
+  cover:docker:
+    desc: "Coverage profile for a module, in a Linux container"
+    cmds:
+      - '{{.DOCKER_RUN}} -w /src/{{.MODULE | default "."}} {{.GO_IMAGE}} go test -race -covermode=atomic -coverprofile=coverage.out ./...'
+
+  toolchain:check:
+    desc: report which of test / test:docker / test:norace can run here
+    silent: true
+    cmds:
+      - if command -v gcc >/dev/null 2>&1; then echo "C toolchain -- $(gcc --version | head -1)"; else echo "C toolchain -- none; the native race task cannot build, use the :docker one"; fi
+      - if docker version >/dev/null 2>&1; then echo "docker -- available"; else echo "docker -- none; only a no-race run is left, and it does NOT satisfy the gate"; fi
