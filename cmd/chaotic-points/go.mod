@@ -1,6 +1,6 @@
 module github.com/RomanAgaltsev/chaotic/cmd/chaotic-points
 
-go 1.26
+go 1.26.0
 
 toolchain go1.26.6
 
@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/google/go-cmp v0.7.0 // indirect
 	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
 )
