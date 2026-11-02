@@ -1,6 +1,6 @@
 module github.com/RomanAgaltsev/chaotic/adapter/io
 
-go 1.26
+go 1.26.0
 
 toolchain go1.26.6
 
